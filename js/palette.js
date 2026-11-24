@@ -1,6 +1,9 @@
 // Paleta de muestras para elegir el color de una prenda a mano.
 // Cada familia tiene sus tonos ordenados de claro a oscuro.
 
+import { h } from './ui.js';
+import { describirColor } from './color.js';
+
 export const PALETA_FAMILIAS = [
   { nombre: 'Blanco / crudo',    tonos: ['#ffffff', '#f8f6f0', '#f2ede1', '#ebe3d2', '#e0d5bd', '#d3c5a8'] },
   { nombre: 'Gris',              tonos: ['#e3e4e6', '#c8cacc', '#a8abaf', '#8a8d91', '#63666b', '#43464b'] },
@@ -17,3 +20,21 @@ export const PALETA_FAMILIAS = [
   { nombre: 'Amarillo / mostaza', tonos: ['#fbf0b0', '#f6e27a', '#f2d23a', '#e3b72a', '#c8991c', '#a67c12'] },
   { nombre: 'Naranja',           tonos: ['#fbd2b0', '#f6a868', '#ec7622', '#d45f15', '#b5562f', '#8c3f1c'] },
 ];
+
+// Componente reutilizable: rejilla de muestras por familias.
+// onElegir(hex) al tocar una muestra; marcar(hex) resalta la muestra elegida.
+export function crearPaleta({ onElegir }) {
+  const el = h('div', { class: 'paleta' },
+    ...PALETA_FAMILIAS.map((f) => h('div', { class: 'pal-fila' },
+      h('span', { class: 'pal-nombre' }, f.nombre),
+      h('div', { class: 'pal-tonos' }, ...f.tonos.map((t) => h('button', {
+        type: 'button', class: 'pal-tono', style: { background: t }, 'data-hex': t,
+        'aria-label': `${f.nombre}: ${describirColor(t).nombre} ${t.toUpperCase()}`, 'aria-pressed': 'false',
+        onclick: () => onElegir(t),
+      }))))));
+  const marcar = (hex) => {
+    const actual = (hex || '').toLowerCase();
+    el.querySelectorAll('.pal-tono').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hex === actual)));
+  };
+  return { el, marcar };
+}

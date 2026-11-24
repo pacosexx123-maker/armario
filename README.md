@@ -11,8 +11,8 @@ Armario digital para el móvil. Haz una foto a cada prenda: la app reconoce qué
 | Pestaña | Qué hace |
 |---|---|
 | **Armario** | Cuadrícula con tus prendas, filtros por categoría y por color. Toca una prenda para editarla o borrarla. |
-| **Añadir** | Haz una foto o elige una de la galería. La app detecta el color dominante (HEX + nombre) y sugiere la categoría con MobileNet. Puedes tocar la foto para coger el color de un punto, ajustarlo a mano y cambiar la categoría y los estilos. Con «Escanear etiqueta» lee la etiqueta interior (OCR) y rellena marca, talla, composición, país de fabricación y cuidados. |
-| **Outfits** | Elige estilo (Formal, Arreglado, Informal, Deportivo), activa o no el abrigo y pulsa «Generar outfit». «Otro» da una alternativa y puedes guardar tus favoritos. |
+| **Añadir** | Haz una foto o elige una de la galería. La app detecta el color dominante (HEX + nombre) y sugiere la categoría con MobileNet. Puedes tocar la foto para coger el color de un punto, ajustarlo a mano y cambiar la categoría y los estilos. Con «Escanear etiqueta» lee la etiqueta interior (OCR) y rellena marca, talla, composición, país de fabricación y cuidados. **Estampado** (liso, rayas, cuadros, topos u otro): la app lo sugiere a partir de la foto (dos colores grandes y distintos; rayas o cuadros si se repiten con un periodo claro) y tú lo confirmas o cambias, con orientación, grosor o tamaño y color del estampado. |
+| **Outfits** | Elige estilo (Formal, Arreglado, Informal, Deportivo), activa o no el abrigo y pulsa «Generar outfit». «Otro» da una alternativa y puedes guardar tus favoritos. Como máximo lleva una prenda con estampado llamativo (las rayas finas y los cuadros pequeños cuentan como discretos) y suma puntos si otra prenda repite el color del estampado. |
 | **Inspiración** | 50 looks de referencia (y los tuyos) ordenados por parecido con tu armario, con filtros por estilo y temporada. Cada look muestra la referencia junto a «tu versión», el % de parecido, prenda a prenda, y la lista «Te falta». Con «Añadir look desde foto» subes una captura de un outfit: la app detecta las prendas y sus colores y lo guarda como «Mío». |
 
 El botón de la esquina superior derecha abre la **copia de seguridad**: exporta todo (con fotos y tus looks) a un archivo `.json` o impórtalo después.
@@ -66,6 +66,8 @@ Los looks con algún dato incorrecto se ignoran y la consola del navegador avisa
     ├── classifier.js   TensorFlow.js + MobileNet (carga diferida)
     ├── outfits.js      Generador de outfits y armonía de color
     ├── label.js        Lectura de etiquetas con Tesseract.js (OCR)
+    ├── palette.js      Paleta de muestras de color (componente reutilizable)
+    ├── pattern.js      Estampados: modelo, dibujo, editor reutilizable y detección
     ├── matching.js     Parecido entre un look y tu armario (familias, CIEDE2000)
     ├── illustration.js Ilustraciones de los looks (iconos de prenda en SVG)
     ├── inspiration.js  Pestaña Inspiración (lista, filtros, comparación)

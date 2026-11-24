@@ -275,24 +275,38 @@ export function extraerColorDominante(source, { balanceBlancos = false } = {}) {
     return Math.exp(-(nx * nx + ny * ny) / (2 * 0.3));
   };
   let pts = [], wts = [];
+  const xs = [], ys = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const lab = labs[y * w + x];
     if (fondos.some((f) => dist2(lab, f) < UMBRAL2)) continue;
-    pts.push(lab); wts.push(pesoCentro(x, y));
+    pts.push(lab); wts.push(pesoCentro(x, y)); xs.push(x); ys.push(y);
   }
+  // Caja de la prenda (percentiles 10–90 para ignorar píxeles sueltos), en fracciones de la imagen
+  let caja = { x0: 0.25, y0: 0.25, x1: 0.75, y1: 0.75 };
   // Si casi todo parece fondo (prenda del mismo color que el fondo), usar la zona central
   if (pts.length < w * h * 0.05) {
     pts = []; wts = [];
     for (let y = Math.floor(h * 0.25); y < h * 0.75; y++) for (let x = Math.floor(w * 0.25); x < w * 0.75; x++) {
       pts.push(labs[y * w + x]); wts.push(pesoCentro(x, y));
     }
+  } else {
+    const pct = (arr, p) => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor((s.length - 1) * p)]; };
+    caja = { x0: pct(xs, 0.1) / w, y0: pct(ys, 0.1) / h, x1: (pct(xs, 0.9) + 1) / w, y1: (pct(ys, 0.9) + 1) / h };
   }
 
   // 4) k-means (k = 5) en Lab y quedarse con el grupo principal
   const grupos = kmeans(pts, wts, 5);
   const lab = grupos[0].center;
   const hex = rgbToHex(labToRgb(lab));
-  return { hex, nombre: nombreColor(lab), balance };
+  const total = grupos.reduce((a, g) => a + g.weight, 0) || 1;
+  return {
+    hex,
+    nombre: nombreColor(lab),
+    balance,
+    // Para detectar estampados: grupos de color de la prenda y su caja
+    grupos: grupos.map((g) => ({ lab: g.center, fraccion: g.weight / total })),
+    caja,
+  };
 }
 
 // Color medio de una zona pequeña alrededor de (x, y) en el canvas.

@@ -6,7 +6,8 @@ import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categ
 import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande } from './ui.js';
-import { PALETA_FAMILIAS } from './palette.js';
+import { crearPaleta } from './palette.js';
+import { crearEditorEstampado, detectarEstampado, estampadoDe, normalizarEstampado, fondoEstampado, textoSugerencia } from './pattern.js';
 import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
 
 /* ---------- Estado ---------- */
@@ -31,7 +32,10 @@ function liberarFoto(id) {
 
 async function recargarDatos() {
   const [prendas, favoritos] = await Promise.all([db.getAll('prendas'), db.getAll('outfits')]);
-  estado.prendas = prendas.sort((a, b) => (b.creada || 0) - (a.creada || 0));
+  // Las prendas antiguas, sin estampado, pasan a ser «liso» con su color como color de base
+  estado.prendas = prendas
+    .map((p) => ({ ...p, estampado: estampadoDe(p) }))
+    .sort((a, b) => (b.creada || 0) - (a.creada || 0));
   estado.favoritos = favoritos.sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
   const ids = new Set(prendas.map((p) => p.id));
   [...urls.keys()].forEach((id) => { if (!ids.has(id)) liberarFoto(id); });
@@ -94,7 +98,7 @@ function renderArmario() {
     h('button', { class: 'item', type: 'button', onclick: () => abrirEdicion(p), 'aria-label': `Editar ${nombreCategoria(p.categoria)} ${p.color?.nombre || ''}` },
       h('img', { src: urlFoto(p), alt: '', loading: 'lazy', decoding: 'async' }),
       h('div', { class: 'meta' },
-        h('span', { class: 'dot', style: { background: p.color?.hex || '#ccc' } }),
+        h('span', { class: 'dot', style: { background: fondoEstampado(p.color?.hex || '#cccccc', p.estampado, { dividido: true }) } }),
         h('span', { class: 'name' }, nombreCategoria(p.categoria)),
         h('span', { class: 'sub' }, p.color?.nombre || '')),
       (p.etiqueta?.marca || p.etiqueta?.talla)
@@ -107,8 +111,10 @@ function renderArmario() {
 /* ================= EDITOR DE PRENDA ================= */
 // Se usa tanto para añadir como para editar.
 // calcularAuto(balanceActivo): recalcula el color automático (solo al añadir una prenda nueva)
-function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etiqueta = null, modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
+function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etiqueta = null, estampado = null, notaEstampado = '', modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
   const st = {
+    estampado: normalizarEstampado(estampado),
+    estampadoTocado: modo === 'editar',
     color: { hex: color.hex, nombre: color.nombre },
     colorAuto: { hex: color.hex, nombre: color.nombre },
     colorEsAuto: modo !== 'editar',   // si sigue siendo el automático, se recalcula al cambiar «Fondo blanco»
@@ -179,14 +185,9 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   const btnAuto = h('button', { class: 'btn', type: 'button', onclick: () => { quitarMarcas(); ponerColor(st.colorAuto, { auto: true }); } }, 'Automático');
 
   // Paleta de muestras por familias (de claro a oscuro)
-  const panelPaleta = h('div', { class: 'paleta', hidden: true },
-    ...PALETA_FAMILIAS.map((f) => h('div', { class: 'pal-fila' },
-      h('span', { class: 'pal-nombre' }, f.nombre),
-      h('div', { class: 'pal-tonos' }, ...f.tonos.map((t) => h('button', {
-        type: 'button', class: 'pal-tono', style: { background: t }, 'data-hex': t,
-        'aria-label': `${f.nombre}: ${describirColor(t).nombre} ${t.toUpperCase()}`, 'aria-pressed': 'false',
-        onclick: () => { quitarMarcas(); ponerColor(describirColor(t)); },
-      }))))),
+  const paleta = crearPaleta({ onElegir: (t) => { quitarMarcas(); ponerColor(describirColor(t)); } });
+  const panelPaleta = h('div', { class: 'paleta-panel', hidden: true },
+    paleta.el,
     h('label', { class: 'btn mini avanzado' }, 'Ajuste avanzado', inputColor));
   const btnPaleta = h('button', { class: 'btn', type: 'button', 'aria-expanded': 'false' }, 'Paleta');
   btnPaleta.addEventListener('click', () => {
@@ -251,6 +252,12 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
       st.balance = nuevo.balance || null;
       st.colorAuto = { hex: nuevo.hex, nombre: nuevo.nombre };
       if (st.colorEsAuto) { quitarMarcas(); ponerColor(st.colorAuto, { auto: true }); }
+      // Si no se ha tocado el estampado, se vuelve a sugerir con el color corregido
+      if (!st.estampadoTocado && nuevo.estampado) {
+        st.estampado = normalizarEstampado(nuevo.estampado);
+        editorEst.setValor(st.estampado, textoSugerencia(nuevo.estampado));
+        pintarMuestra();
+      }
       pintarBalance();
     });
     pintarBalance();
@@ -258,17 +265,29 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
       h('label', { class: 'switch-row' }, h('span', {}, 'Fondo blanco'), swBalance), info);
   }
 
+  let editorEst = null; // se crea más abajo (necesita el color inicial)
+  // La muestra enseña el estampado dibujado si la prenda no es lisa
+  const pintarMuestra = () => { swatch.style.background = fondoEstampado(st.color.hex, st.estampado); };
+
   function ponerColor(c, { desdeTeclado = false, auto = false } = {}) {
     st.color = { hex: c.hex, nombre: c.nombre };
     st.colorEsAuto = auto;
-    swatch.style.background = c.hex;
+    pintarMuestra();
     nombre.textContent = c.nombre;
     if (!desdeTeclado) { hex.value = c.hex.toUpperCase(); hex.classList.remove('invalid'); }
     inputColor.value = c.hex;
-    const actual = c.hex.toLowerCase();
-    panelPaleta.querySelectorAll('.pal-tono').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hex === actual)));
+    paleta.marcar(c.hex);
+    if (editorEst) editorEst.setBase(c.hex);
   }
   ponerColor(st.color, { auto: st.colorEsAuto });
+
+  // Estampado (editor reutilizable; el color de arriba es el color de base)
+  editorEst = crearEditorEstampado({
+    base: st.color.hex,
+    valor: st.estampado,
+    onCambio: (v) => { st.estampado = v; st.estampadoTocado = true; pintarMuestra(); },
+  });
+  if (notaEstampado) editorEst.setValor(st.estampado, notaEstampado);
 
   // Categoría
   const select = h('select', { 'aria-label': 'Categoría' },
@@ -374,7 +393,7 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
     if (!st.estilos.size) { toast('Marca al menos un estilo'); return; }
     btnGuardar.disabled = true;
     try {
-      await onGuardar({ categoria: st.categoria, color: st.color, estilos: [...st.estilos], etiqueta: datosEtiqueta() });
+      await onGuardar({ categoria: st.categoria, color: st.color, estampado: normalizarEstampado(st.estampado), estilos: [...st.estilos], etiqueta: datosEtiqueta() });
       destruir();
     } catch (e) {
       console.error(e);
@@ -389,13 +408,16 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   const el = h('div', { class: 'editor' },
     wrap,
     h('div', { class: 'card' },
-      h('p', { class: 'field-label' }, 'Color'),
+      h('p', { class: 'field-label' }, 'Color de base'),
       h('div', { class: 'color-row' }, swatch, h('div', { class: 'color-info' }, nombre,
         h('label', { class: 'hex-field' }, h('span', {}, 'Código'), hex))),
       cajaBalance,
       h('div', { class: 'color-actions' }, btnPaleta, btnOtra, btnAuto),
       panelPaleta,
       panelOtra),
+    h('div', { class: 'card' },
+      h('p', { class: 'field-label' }, 'Estampado'),
+      editorEst.el),
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Categoría'),
       select, aiEstado),
@@ -462,10 +484,17 @@ async function alElegirFoto(e) {
   const host = $('#anadir-editor');
   host.replaceChildren(h('div', { class: 'card' }, h('div', { class: 'ai-status' }, h('span', { class: 'spinner' }), 'Preparando la foto…')));
 
+  // Color de base + sugerencia de estampado (dos colores grandes, rayas, cuadros…)
+  const analizar = (balanceBlancos) => {
+    const c = extraerColorDominante(canvas, { balanceBlancos });
+    let estampado = { tipo: 'liso' };
+    try { estampado = detectarEstampado(canvas, c); } catch (e) { console.warn('Detección de estampado', e); }
+    return { ...c, estampado };
+  };
   let canvas, blob, color;
   try {
     ({ canvas, blob } = await processPhoto(file));
-    color = extraerColorDominante(canvas, { balanceBlancos: leerPref('fondoBlanco', 'true') === 'true' });
+    color = analizar(leerPref('fondoBlanco', 'true') === 'true');
   } catch (err) {
     console.error(err);
     toast('No se pudo procesar la foto');
@@ -475,7 +504,9 @@ async function alElegirFoto(e) {
 
   const ed = crearEditor({
     blob, canvas, color, modo: 'nuevo',
-    calcularAuto: (balanceBlancos) => extraerColorDominante(canvas, { balanceBlancos }),
+    estampado: color.estampado,
+    notaEstampado: textoSugerencia(color.estampado),
+    calcularAuto: analizar,
     onGuardar: async (datos) => {
       await db.put('prendas', { id: db.uid(), foto: blob, ...datos, creada: Date.now() });
       await recargarDatos();
@@ -512,6 +543,7 @@ async function abrirEdicion(prenda) {
     categoria: prenda.categoria,
     estilos: prenda.estilos || [],
     etiqueta: prenda.etiqueta,
+    estampado: estampadoDe(prenda),
     onGuardar: async (datos) => {
       await db.put('prendas', { ...prenda, ...datos, actualizada: Date.now() });
       await recargarDatos();
@@ -582,9 +614,9 @@ function pintarOutfit() {
     h('div', { class: `outfit-pieces n${o.prendas.length}` },
       ...o.prendas.map((p) => h('div', { class: 'piece' },
         h('img', { src: urlFoto(p), alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
-        h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: p.color.hex } }), nombreCategoria(p.categoria))))),
+        h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: fondoEstampado(p.color.hex, p.estampado, { dividido: true }) } }), nombreCategoria(p.categoria))))),
     h('p', { class: 'outfit-why' }, o.frase),
-    h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: p.color.hex }, title: p.color.nombre }))),
+    h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: fondoEstampado(p.color.hex, p.estampado) }, title: p.color.nombre }))),
     o.aviso ? h('p', { class: 'muted small' }, o.aviso) : null,
     h('div', { class: 'outfit-actions' }, btnFav, btnOtro)));
 }

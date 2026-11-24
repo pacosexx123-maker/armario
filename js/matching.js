@@ -6,6 +6,7 @@
 import { categoria as infoCategoria } from './categories.js';
 import { hexToLab, deltaE2000, nombreColor, infoColor } from './color.js';
 import { ESTILOS_OUTFIT } from './outfits.js';
+import { esLlamativo } from './pattern.js';
 
 export const UMBRAL_OK = 55; // a partir de aquí la prenda se considera «razonablemente parecida»
 
@@ -101,13 +102,17 @@ export function adaptarLook(look, prendas, elecciones = {}) {
   const orden = look.huecos.map((_, i) => i)
     .sort((a, b) => (candidatos[b][0]?.puntos || 0) - (candidatos[a][0]?.puntos || 0));
   const usadas = new Set();
+  let llamativoUsado = false; // como máximo una prenda con estampado llamativo en «tu versión»
   const huecos = new Array(look.huecos.length);
   for (const i of orden) {
-    const libres = candidatos[i].filter((c) => !usadas.has(c.prenda.id));
+    const libres = candidatos[i].filter((c) => !usadas.has(c.prenda.id) && !(llamativoUsado && esLlamativo(c.prenda.estampado)));
     const buenas = libres.filter((c) => c.puntos >= UMBRAL_OK);
     const n = buenas.length ? (elecciones[i] || 0) % buenas.length : 0;
     const elegida = buenas[n] || null;
-    if (elegida) usadas.add(elegida.prenda.id);
+    if (elegida) {
+      usadas.add(elegida.prenda.id);
+      if (esLlamativo(elegida.prenda.estampado)) llamativoUsado = true;
+    }
     huecos[i] = {
       hueco: look.huecos[i],
       prenda: elegida ? elegida.prenda : null,

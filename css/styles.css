@@ -215,7 +215,23 @@ select.needs-choice { border-color: var(--accent); box-shadow: 0 0 0 3px var(--a
 .balance .switch-row { font-size: 14px; }
 .balance-info { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .balance-info.warn { color: var(--accent); font-weight: 600; }
-.paleta { display: grid; gap: 8px; margin-top: 12px; }
+.paleta { display: grid; gap: 8px; }
+.paleta-panel { display: grid; gap: 10px; margin-top: 12px; }
+
+/* Estampados */
+.est-editor { display: grid; gap: 12px; }
+.est-opciones { display: grid; gap: 10px; }
+.est-opciones:empty { display: none; }
+.est-fila { display: grid; gap: 6px; }
+.est-etiqueta { font-size: 12px; font-weight: 600; color: var(--muted); }
+.est-color { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.est-c2 { width: 34px; height: 34px; border-radius: 10px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+  background-image: linear-gradient(45deg, var(--line) 25%, transparent 25%, transparent 75%, var(--line) 75%); background-size: 10px 10px; }
+.est-c2-nombre { font-size: 14px; font-weight: 600; text-transform: capitalize; min-width: 0; }
+.est-color .link-btn { padding: 0; }
+.est-paleta { padding: 12px; border-radius: 14px; background: var(--surface-2); }
+.est-preview { height: 88px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.est-nota { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--ink-2); font-size: 13px; font-weight: 500; }
 .pal-fila { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 8px; }
 .pal-nombre { font-size: 12px; font-weight: 600; color: var(--ink-2); line-height: 1.2; }
 .pal-tonos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }

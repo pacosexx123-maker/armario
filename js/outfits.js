@@ -1,7 +1,12 @@
 // Generador de outfits con puntuación de armonía de color.
 
-import { infoColor, difTono } from './color.js';
+import { infoColor, difTono, hexToLab, deltaE2000, nombreColor } from './color.js';
 import { categoria } from './categories.js';
+import { estampadoDe, esLlamativo } from './pattern.js';
+
+// Como máximo una prenda con estampado llamativo por outfit
+// (las rayas finas y los cuadros pequeños cuentan como discretos)
+export const estampadosCompatibles = (prendas) => prendas.filter((p) => esLlamativo(p.estampado)).length <= 1;
 
 const tiene = (p, e) => (p.estilos || []).includes(e);
 
@@ -63,7 +68,18 @@ function puntuar(prendas, estilo) {
     puntos -= prendas.filter((p) => ['sudadera', 'shorts', 'chandal'].includes(p.categoria)).length * 1.5;
     puntos -= infos.filter((c) => c.chillon).length * 0.8;
   }
-  return { puntos, infos };
+
+  // Estampados: la armonía usa el color de base (arriba); además suma si otra prenda
+  // del outfit coincide con el color del estampado
+  const ecos = [];
+  prendas.forEach((p, i) => {
+    const e = estampadoDe(p);
+    if (e.tipo === 'liso' || !e.color2) return;
+    const lab2 = hexToLab(e.color2);
+    if (infos.some((c, j) => j !== i && deltaE2000(lab2, c.lab) < 12)) ecos.push({ categoria: p.categoria, color: nombreColor(lab2) });
+  });
+  puntos += Math.min(1.6, ecos.length * 0.8);
+  return { puntos, infos, ecos };
 }
 
 /* ---------- Frase explicativa ---------- */
@@ -73,7 +89,12 @@ function lista(nombres) {
   return nombres.slice(0, -1).join(', ') + ' y ' + nombres[nombres.length - 1];
 }
 
-function explicar(infos) {
+function explicar(infos, ecos = []) {
+  const frase = explicarColores(infos);
+  return ecos.length ? `${frase}; el estampado repite el ${ecos[0].color}` : frase;
+}
+
+function explicarColores(infos) {
   const neutros = infos.filter((c) => c.neutro);
   const acentos = infos.filter((c) => !c.neutro);
   const nombresNeutros = [...new Set(neutros.map((c) => c.nombre))];
@@ -122,12 +143,16 @@ export function generarOutfit(todas, estilo, { incluirAbrigo = false, evitar = n
 
   const construir = (base, zap, capa) => (capa ? [...base, zap, capa] : [...base, zap]);
   const total = bases.length * por.calzado.length * capas.length;
-  const combos = [];
+  let combos = [];
   if (total <= MAX_COMBINACIONES) {
     for (const b of bases) for (const z of por.calzado) for (const c of capas) combos.push(construir(b, z, c));
   } else {
     // Demasiadas: muestra aleatoria
     for (let i = 0; i < MAX_COMBINACIONES; i++) combos.push(construir(aleatorio(bases), aleatorio(por.calzado), aleatorio(capas)));
+  }
+  combos = combos.filter(estampadosCompatibles);
+  if (!combos.length) {
+    return { error: `Con las prendas del estilo ${def.nombre}, todas las combinaciones juntan dos estampados llamativos. Añade alguna prenda lisa o con un estampado discreto (rayas finas, cuadros pequeños).` };
   }
 
   const puntuados = combos.map((prendas) => ({ prendas, ...puntuar(prendas, estilo) }));
@@ -152,7 +177,7 @@ export function generarOutfit(todas, estilo, { incluirAbrigo = false, evitar = n
     prendas,
     clave: elegido.clave,
     estilo,
-    frase: explicar(elegido.infos),
+    frase: explicar(elegido.infos, elegido.ecos),
     puntos: elegido.puntos,
     aviso,
   };
