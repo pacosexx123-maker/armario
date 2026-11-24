@@ -554,7 +554,11 @@ input:not([type="checkbox"]):not([type="color"]):not([type="file"]), select, tex
 .bienvenida-opciones .big-btn { justify-content: center; text-align: center; font-size: 18px; padding: 18px; }
 
 /* ----- Deslizar ----- */
-/* Entre pantallas principales: las transiciones las hace app.js (la pantalla sigue al dedo) */
+/* Entre pantallas principales: las transiciones las hace app.js (la pantalla sigue al dedo).
+   El navegador solo se encarga del desplazamiento vertical; el gesto lateral es de la app
+   (así no lo «roba» como desplazamiento). Las filas de chips sí se desplazan de lado. */
+body { touch-action: pan-y; }
+.scroll-x { touch-action: pan-x pan-y; }
 .tabbar { overflow: hidden; }
 .tab-indicador { position: absolute; top: 0; left: 0; width: 25%; height: 3px; pointer-events: none; will-change: transform; }
 .tab-indicador::after { content: ""; position: absolute; left: 50%; top: 0; width: 30px; height: 3px; margin-left: -15px; border-radius: 0 0 3px 3px; background: var(--ink); }

@@ -180,10 +180,13 @@ function moverIndicador(posicion, conAnimacion = true) {
 /* ---------- Deslizar con el dedo (progresivo) ---------- */
 // De derecha a izquierda → pestaña siguiente; de izquierda a derecha → anterior.
 // La pantalla sigue al dedo y la de al lado entra a la vez; al soltar se completa o vuelve.
-// Zonas donde deslizar ya hace otra cosa (filas de chips, fotos para coger color, paletas, campos)
-const NO_DESLIZAR = '.scroll-x, input, select, textarea, .photo-wrap, .look-foto, .paleta-panel, .est-paleta, .otra-imagen, .segmented, .tonos-rejilla';
+// Solo se excluye lo que ya usa el gesto lateral: filas de chips que se desplazan de lado y campos
+// de texto. Sobre fotos, paletas o botones sí se puede deslizar (tocarlos sigue funcionando).
+const NO_DESLIZAR = '.scroll-x, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea, [contenteditable], .tabbar';
 function activarDeslizarPestanas() {
-  const zona = $('main');
+  // Se escucha en toda la pantalla (no solo en el contenido): así también funciona en la zona
+  // vacía de abajo en las pantallas cortas (Añadir, Outfits…)
+  const zona = document;
   let g = null; // gesto en curso
 
   const vecina = (dx) => {
