@@ -6,6 +6,7 @@ import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categ
 import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref } from './ui.js';
+import { PALETA_FAMILIAS } from './palette.js';
 import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
 
 /* ---------- Estado ---------- */
@@ -105,10 +106,13 @@ function renderArmario() {
 
 /* ================= EDITOR DE PRENDA ================= */
 // Se usa tanto para añadir como para editar.
-function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etiqueta = null, modo, onGuardar, onCancelar, onBorrar }) {
+// calcularAuto(balanceActivo): recalcula el color automático (solo al añadir una prenda nueva)
+function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etiqueta = null, modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
   const st = {
-    color: { ...color },
-    colorAuto: { ...color },
+    color: { hex: color.hex, nombre: color.nombre },
+    colorAuto: { hex: color.hex, nombre: color.nombre },
+    colorEsAuto: modo !== 'editar',   // si sigue siendo el automático, se recalcula al cambiar «Fondo blanco»
+    balance: color.balance || null,   // resultado del balance de blancos con el fondo
     categoria,
     estilos: new Set(estilos),
     estilosTocados: modo === 'editar',
@@ -116,25 +120,32 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
     cerrado: false,
   };
   const fotoURL = URL.createObjectURL(blob);
+  const gananciasFoto = () => (st.balance && st.balance.aplicado ? st.balance.ganancias : null);
 
-  // Foto (tocar para elegir color)
+  // Tocar una imagen (con object-fit: contain) → color medio de esa zona y posición de la marca
+  function colorDeToque(e, imgEl, cv, marcaEl, ganancias) {
+    const r = imgEl.getBoundingClientRect();
+    const esc = Math.min(r.width / cv.width, r.height / cv.height);
+    const offX = (r.width - cv.width * esc) / 2, offY = (r.height - cv.height * esc) / 2;
+    const x = (e.clientX - r.left - offX) / esc, y = (e.clientY - r.top - offY) / esc;
+    if (x < 0 || y < 0 || x >= cv.width || y >= cv.height) return null;
+    const c = colorEnPunto(cv, x, y, Math.max(3, Math.round(cv.width / 120)), ganancias);
+    const wr = marcaEl.parentElement.getBoundingClientRect();
+    marcaEl.style.left = `${e.clientX - wr.left}px`;
+    marcaEl.style.top = `${e.clientY - wr.top}px`;
+    marcaEl.style.background = c.hex;
+    marcaEl.hidden = false;
+    return c;
+  }
+
+  // Foto (tocar para elegir color; se aplica la misma corrección de blancos que al color automático)
   const marca = h('div', { class: 'picker-mark', hidden: true });
   const img = h('img', { src: fotoURL, alt: 'Foto de la prenda', draggable: 'false' });
   const wrap = h('div', { class: 'photo-wrap' }, img, marca,
     h('div', { class: 'photo-hint' }, 'Toca la foto para tomar el color de ese punto'));
   img.addEventListener('click', (e) => {
-    const r = img.getBoundingClientRect();
-    const esc = Math.min(r.width / canvas.width, r.height / canvas.height);
-    const offX = (r.width - canvas.width * esc) / 2, offY = (r.height - canvas.height * esc) / 2;
-    const x = (e.clientX - r.left - offX) / esc, y = (e.clientY - r.top - offY) / esc;
-    if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return;
-    const c = colorEnPunto(canvas, x, y, Math.max(3, Math.round(canvas.width / 120)));
-    const wr = wrap.getBoundingClientRect();
-    marca.style.left = `${e.clientX - wr.left}px`;
-    marca.style.top = `${e.clientY - wr.top}px`;
-    marca.style.background = c.hex;
-    marca.hidden = false;
-    ponerColor(c);
+    const c = colorDeToque(e, img, canvas, marca, gananciasFoto());
+    if (c) { if (marcaOtra) marcaOtra.hidden = true; ponerColor(c); }
   });
 
   // Color
@@ -152,21 +163,107 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   hex.addEventListener('input', () => {
     const valor = leerHex(hex.value);
     hex.classList.toggle('invalid', !valor && hex.value.trim() !== '');
-    if (valor) { marca.hidden = true; ponerColor(describirColor(valor), true); }
+    if (valor) { quitarMarcas(); ponerColor(describirColor(valor), { desdeTeclado: true }); }
   });
   hex.addEventListener('blur', () => { hex.classList.remove('invalid'); hex.value = st.color.hex.toUpperCase(); });
   hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') hex.blur(); });
-  const inputColor = h('input', { type: 'color', 'aria-label': 'Ajustar color a mano' });
-  inputColor.addEventListener('input', () => { marca.hidden = true; ponerColor(describirColor(inputColor.value)); });
-  const btnAuto = h('button', { class: 'btn', type: 'button', onclick: () => { marca.hidden = true; ponerColor(st.colorAuto); } }, 'Automático');
-  function ponerColor(c, desdeTeclado = false) {
+
+  // Rueda de color fina («Ajuste avanzado»)
+  const inputColor = h('input', { type: 'color', 'aria-label': 'Ajuste avanzado del color' });
+  inputColor.addEventListener('input', () => { quitarMarcas(); ponerColor(describirColor(inputColor.value)); });
+  const btnAuto = h('button', { class: 'btn', type: 'button', onclick: () => { quitarMarcas(); ponerColor(st.colorAuto, { auto: true }); } }, 'Automático');
+
+  // Paleta de muestras por familias (de claro a oscuro)
+  const panelPaleta = h('div', { class: 'paleta', hidden: true },
+    ...PALETA_FAMILIAS.map((f) => h('div', { class: 'pal-fila' },
+      h('span', { class: 'pal-nombre' }, f.nombre),
+      h('div', { class: 'pal-tonos' }, ...f.tonos.map((t) => h('button', {
+        type: 'button', class: 'pal-tono', style: { background: t }, 'data-hex': t,
+        'aria-label': `${f.nombre}: ${describirColor(t).nombre} ${t.toUpperCase()}`, 'aria-pressed': 'false',
+        onclick: () => { quitarMarcas(); ponerColor(describirColor(t)); },
+      }))))),
+    h('label', { class: 'btn mini avanzado' }, 'Ajuste avanzado', inputColor));
+  const btnPaleta = h('button', { class: 'btn', type: 'button', 'aria-expanded': 'false' }, 'Paleta');
+  btnPaleta.addEventListener('click', () => {
+    panelPaleta.hidden = !panelPaleta.hidden;
+    btnPaleta.setAttribute('aria-expanded', String(!panelPaleta.hidden));
+  });
+
+  // «Sacar color de otra imagen» (p. ej. la foto de la tienda): solo para elegir el color, no se guarda
+  const inputOtra = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  const btnOtra = h('label', { class: 'btn' }, inputOtra, 'Otra imagen');
+  const panelOtra = h('div', { class: 'otra-imagen', hidden: true });
+  let otraURL = null, marcaOtra = null;
+  const liberarOtra = () => {
+    if (otraURL) URL.revokeObjectURL(otraURL);
+    otraURL = null; marcaOtra = null;
+    panelOtra.replaceChildren();
+    panelOtra.hidden = true;
+  };
+  inputOtra.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let cv;
+    try { cv = await blobToCanvas(file, 1200); } catch { toast('No se pudo abrir la imagen'); return; }
+    if (st.cerrado) return;
+    liberarOtra();
+    otraURL = URL.createObjectURL(file);
+    marcaOtra = h('div', { class: 'picker-mark', hidden: true });
+    const imgOtra = h('img', { src: otraURL, alt: 'Imagen de referencia para el color', draggable: 'false' });
+    imgOtra.addEventListener('click', (ev) => {
+      const c = colorDeToque(ev, imgOtra, cv, marcaOtra, null); // foto de tienda: sin corrección
+      if (c) { marca.hidden = true; ponerColor(c); }
+    });
+    panelOtra.replaceChildren(
+      h('div', { class: 'otra-cab' },
+        h('span', {}, 'Imagen de referencia · no se guarda'),
+        h('button', { class: 'link-btn', type: 'button', onclick: liberarOtra }, 'Cerrar')),
+      h('div', { class: 'photo-wrap otra' }, imgOtra, marcaOtra,
+        h('div', { class: 'photo-hint' }, 'Toca para coger el color de ese punto')));
+    panelOtra.hidden = false;
+  });
+  const quitarMarcas = () => { marca.hidden = true; if (marcaOtra) marcaOtra.hidden = true; };
+
+  // «Fondo blanco»: balance de blancos con el fondo (solo al añadir una prenda)
+  let cajaBalance = null;
+  if (calcularAuto) {
+    const swBalance = h('input', { type: 'checkbox', class: 'switch', 'aria-label': 'Fondo blanco: corregir el color usando el fondo' });
+    swBalance.checked = !!st.balance;
+    const info = h('p', { class: 'balance-info' });
+    const pintarBalance = () => {
+      const b = st.balance;
+      let texto = 'Sin corrección: se usa el color tal y como sale en la foto.', aviso = false;
+      if (swBalance.checked && b && b.aplicado) texto = 'Color corregido usando el fondo como referencia de blanco.';
+      else if (swBalance.checked && b && b.motivo === 'oscuro') { texto = 'El fondo es oscuro, así que no se ha corregido el color. Para corregirlo, haz la foto sobre un fondo blanco.'; aviso = true; }
+      else if (swBalance.checked && b) { texto = 'El fondo tiene color, así que no se ha corregido. Para corregirlo, haz la foto sobre un fondo blanco.'; aviso = true; }
+      info.textContent = texto;
+      info.classList.toggle('warn', aviso);
+    };
+    swBalance.addEventListener('change', () => {
+      guardarPref('fondoBlanco', String(swBalance.checked));
+      const nuevo = calcularAuto(swBalance.checked);
+      st.balance = nuevo.balance || null;
+      st.colorAuto = { hex: nuevo.hex, nombre: nuevo.nombre };
+      if (st.colorEsAuto) { quitarMarcas(); ponerColor(st.colorAuto, { auto: true }); }
+      pintarBalance();
+    });
+    pintarBalance();
+    cajaBalance = h('div', { class: 'balance' },
+      h('label', { class: 'switch-row' }, h('span', {}, 'Fondo blanco'), swBalance), info);
+  }
+
+  function ponerColor(c, { desdeTeclado = false, auto = false } = {}) {
     st.color = { hex: c.hex, nombre: c.nombre };
+    st.colorEsAuto = auto;
     swatch.style.background = c.hex;
     nombre.textContent = c.nombre;
     if (!desdeTeclado) { hex.value = c.hex.toUpperCase(); hex.classList.remove('invalid'); }
     inputColor.value = c.hex;
+    const actual = c.hex.toLowerCase();
+    panelPaleta.querySelectorAll('.pal-tono').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.hex === actual)));
   }
-  ponerColor(st.color);
+  ponerColor(st.color, { auto: st.colorEsAuto });
 
   // Categoría
   const select = h('select', { 'aria-label': 'Categoría' },
@@ -290,9 +387,10 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
       h('p', { class: 'field-label' }, 'Color'),
       h('div', { class: 'color-row' }, swatch, h('div', { class: 'color-info' }, nombre,
         h('label', { class: 'hex-field' }, h('span', {}, 'Código'), hex))),
-      h('div', { class: 'color-actions' },
-        h('label', { class: 'btn' }, 'Selector', inputColor),
-        btnAuto)),
+      cajaBalance,
+      h('div', { class: 'color-actions' }, btnPaleta, btnOtra, btnAuto),
+      panelPaleta,
+      panelOtra),
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Categoría'),
       select, aiEstado),
@@ -310,6 +408,7 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
     if (st.cerrado) return;
     st.cerrado = true;
     URL.revokeObjectURL(fotoURL);
+    liberarOtra();
   }
 
   function setEstado(tipo, texto) {
@@ -345,6 +444,7 @@ function reiniciarAnadir() {
   editorNuevo = null;
   $('#anadir-editor').replaceChildren();
   $('#anadir-inicio').hidden = false;
+  $('#fondo-blanco').checked = leerPref('fondoBlanco', 'true') === 'true';
 }
 
 async function alElegirFoto(e) {
@@ -360,7 +460,7 @@ async function alElegirFoto(e) {
   let canvas, blob, color;
   try {
     ({ canvas, blob } = await processPhoto(file));
-    color = extraerColorDominante(canvas);
+    color = extraerColorDominante(canvas, { balanceBlancos: leerPref('fondoBlanco', 'true') === 'true' });
   } catch (err) {
     console.error(err);
     toast('No se pudo procesar la foto');
@@ -370,6 +470,7 @@ async function alElegirFoto(e) {
 
   const ed = crearEditor({
     blob, canvas, color, modo: 'nuevo',
+    calcularAuto: (balanceBlancos) => extraerColorDominante(canvas, { balanceBlancos }),
     onGuardar: async (datos) => {
       await db.put('prendas', { id: db.uid(), foto: blob, ...datos, creada: Date.now() });
       await recargarDatos();
@@ -557,6 +658,9 @@ async function iniciar() {
   window.addEventListener('hashchange', ruta);
   $('#input-camara').addEventListener('change', alElegirFoto);
   $('#input-galeria').addEventListener('change', alElegirFoto);
+  const swFondo = $('#fondo-blanco');
+  swFondo.checked = leerPref('fondoBlanco', 'true') === 'true';
+  swFondo.addEventListener('change', () => guardarPref('fondoBlanco', String(swFondo.checked)));
 
   document.querySelectorAll('#selector-estilo button').forEach((b) => b.addEventListener('click', () => {
     estado.estiloOutfit = b.dataset.estilo;

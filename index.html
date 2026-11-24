@@ -44,7 +44,11 @@
     <!-- AÑADIR -->
     <section id="view-anadir" class="view" aria-label="Añadir prenda" hidden>
       <div id="anadir-inicio" class="add-start">
-        <p class="lead">Fotografía la prenda sobre un fondo liso, bien iluminada y estirada. La app detectará su tipo y su color.</p>
+        <p class="consejo">💡 Mejor con luz natural, sin flash y sobre un fondo blanco.</p>
+        <label class="switch-row card fondo-blanco">
+          <span><strong>Fondo blanco</strong><small>Usa el fondo como referencia de blanco para corregir el color de la prenda.</small></span>
+          <input type="checkbox" id="fondo-blanco" class="switch" checked>
+        </label>
         <label class="big-btn">
           <input type="file" accept="image/*" capture="environment" id="input-camara" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.5"/></svg>

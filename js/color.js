@@ -199,7 +199,37 @@ export function kmeans(points, weights, k, iters = 20) {
 
 /* ---------- Color dominante de la prenda ---------- */
 
-export function extraerColorDominante(source) {
+/* ---------- Balance de blancos con el fondo ---------- */
+
+// Aplica una corrección por canal (en RGB lineal) a un color sRGB 0–255.
+export function corregirRGB(r, g, b, ganancias) {
+  if (!ganancias) return [r, g, b];
+  return [fromLin(toLin(r) * ganancias[0]), fromLin(toLin(g) * ganancias[1]), fromLin(toLin(b) * ganancias[2])];
+}
+
+// Usa el fondo (píxeles del borde) como referencia de blanco.
+// Devuelve { aplicado, ganancias, motivo, fondoHex }.
+function calcularBalance(data, indicesBorde, fondoLab) {
+  const fondoHex = rgbToHex(labToRgb(fondoLab));
+  const croma = Math.hypot(fondoLab[1], fondoLab[2]);
+  if (croma > 22) return { aplicado: false, motivo: 'color', fondoHex };
+  if (fondoLab[0] < 55) return { aplicado: false, motivo: 'oscuro', fondoHex };
+  // Color medio (en RGB lineal) de los píxeles del borde que pertenecen al fondo
+  let R = 0, G = 0, B = 0, n = 0;
+  for (const i of indicesBorde) {
+    const k = i * 4;
+    if (dist2(rgbToLab(data[k], data[k + 1], data[k + 2]), fondoLab) > 15 ** 2) continue;
+    R += toLin(data[k]); G += toLin(data[k + 1]); B += toLin(data[k + 2]); n++;
+  }
+  if (!n) return { aplicado: false, motivo: 'oscuro', fondoHex };
+  R /= n; G /= n; B /= n;
+  // Ganancias que convierten el fondo en blanco/gris neutro (cada canal llevado al más alto)
+  const ref = Math.max(R, G, B);
+  const lim = (v) => Math.min(1.7, Math.max(0.6, v));
+  return { aplicado: true, ganancias: [lim(ref / R), lim(ref / G), lim(ref / B)], fondoHex };
+}
+
+export function extraerColorDominante(source, { balanceBlancos = false } = {}) {
   // 1) Reducir la imagen (máx. 96 px de lado)
   const S = 96;
   const scale = Math.min(1, S / Math.max(source.width, source.height));
@@ -210,16 +240,30 @@ export function extraerColorDominante(source) {
   const ctx = c.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(source, 0, 0, w, h);
   const data = ctx.getImageData(0, 0, w, h).data;
-  const labs = new Array(w * h);
-  for (let i = 0; i < w * h; i++) labs[i] = rgbToLab(data[i * 4], data[i * 4 + 1], data[i * 4 + 2]);
+  const calcularLabs = (gan) => {
+    const res = new Array(w * h);
+    for (let i = 0; i < w * h; i++) res[i] = rgbToLab(...corregirRGB(data[i * 4], data[i * 4 + 1], data[i * 4 + 2], gan));
+    return res;
+  };
+  let labs = calcularLabs(null);
 
   // 2) Estimar el fondo con los píxeles del borde (puede haber 1–3 colores de fondo)
   const bw = Math.max(2, Math.round(Math.min(w, h) * 0.06));
-  const border = [];
+  const indicesBorde = [];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (x < bw || y < bw || x >= w - bw || y >= h - bw) border.push(labs[y * w + x]);
+    if (x < bw || y < bw || x >= w - bw || y >= h - bw) indicesBorde.push(y * w + x);
   }
-  const bgGroups = kmeans(border, null, 3);
+  let bgGroups = kmeans(indicesBorde.map((i) => labs[i]), null, 3);
+
+  // 2b) Balance de blancos opcional: el fondo principal se toma como blanco/gris neutro
+  let balance = null;
+  if (balanceBlancos) {
+    balance = calcularBalance(data, indicesBorde, bgGroups[0].center);
+    if (balance.aplicado) {
+      labs = calcularLabs(balance.ganancias);
+      bgGroups = kmeans(indicesBorde.map((i) => labs[i]), null, 3);
+    }
+  }
   const bgTotal = bgGroups.reduce((a, g) => a + g.weight, 0);
   const fondos = bgGroups.filter((g) => g.weight / bgTotal > 0.15).map((g) => g.center);
 
@@ -248,18 +292,19 @@ export function extraerColorDominante(source) {
   const grupos = kmeans(pts, wts, 5);
   const lab = grupos[0].center;
   const hex = rgbToHex(labToRgb(lab));
-  return { hex, nombre: nombreColor(lab) };
+  return { hex, nombre: nombreColor(lab), balance };
 }
 
 // Color medio de una zona pequeña alrededor de (x, y) en el canvas.
-export function colorEnPunto(canvas, x, y, radio = 5) {
+// `ganancias` (opcional): misma corrección de balance de blancos que la foto.
+export function colorEnPunto(canvas, x, y, radio = 5, ganancias = null) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const x0 = Math.max(0, Math.round(x - radio)), y0 = Math.max(0, Math.round(y - radio));
   const x1 = Math.min(canvas.width, Math.round(x + radio + 1)), y1 = Math.min(canvas.height, Math.round(y + radio + 1));
   const d = ctx.getImageData(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0)).data;
   let L = 0, A = 0, B = 0, n = 0;
   for (let i = 0; i < d.length; i += 4) {
-    const lab = rgbToLab(d[i], d[i + 1], d[i + 2]);
+    const lab = rgbToLab(...corregirRGB(d[i], d[i + 1], d[i + 2], ganancias));
     L += lab[0]; A += lab[1]; B += lab[2]; n++;
   }
   const lab = [L / n, A / n, B / n];
