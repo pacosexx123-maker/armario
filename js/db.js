@@ -1,8 +1,8 @@
 // Almacenamiento local con IndexedDB (todo queda en el móvil).
-// Almacenes: "prendas" y "outfits" (favoritos).
+// Almacenes: "prendas", "outfits" (favoritos) y "looks" (mis looks de inspiración).
 
 const DB_NAME = 'armario-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // v2: almacén "looks" (mis looks de inspiración)
 let dbPromise = null;
 
 function openDB() {
@@ -13,6 +13,7 @@ function openDB() {
         const db = req.result;
         if (!db.objectStoreNames.contains('prendas')) db.createObjectStore('prendas', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('outfits')) db.createObjectStore('outfits', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('looks')) db.createObjectStore('looks', { keyPath: 'id' });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);

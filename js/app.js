@@ -5,29 +5,8 @@ import { extraerColorDominante, colorEnPunto, describirColor, NOMBRES_COLOR, col
 import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categories.js';
 import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
-
-const $ = (sel, root = document) => root.querySelector(sel);
-
-function h(tag, attrs = {}, ...hijos) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (v == null || v === false) continue;
-    if (k === 'class') el.className = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
-    else if (k === 'html') el.innerHTML = v;
-    else el.setAttribute(k, v === true ? '' : v);
-  }
-  for (const c of hijos.flat()) if (c != null && c !== false) el.append(c instanceof Node ? c : document.createTextNode(c));
-  return el;
-}
-
-const ICONOS = {
-  corazon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>',
-  otro: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
-  papelera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
-  cerrar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-};
+import { $, h, ICONOS, toast, chip, leerPref, guardarPref } from './ui.js';
+import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
 
 /* ---------- Estado ---------- */
 const estado = {
@@ -41,24 +20,12 @@ const estado = {
 };
 const urls = new Map(); // id de prenda → URL de su foto
 
-function leerPref(k, def) { try { return localStorage.getItem(k) ?? def; } catch { return def; } }
-function guardarPref(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } }
-
 function urlFoto(p) {
   if (!urls.has(p.id)) urls.set(p.id, URL.createObjectURL(p.foto));
   return urls.get(p.id);
 }
 function liberarFoto(id) {
   if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
-}
-
-let toastTimer;
-function toast(msg) {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
 async function recargarDatos() {
@@ -74,6 +41,7 @@ const VISTAS = {
   armario: { titulo: 'Mi armario', render: renderArmario },
   anadir: { titulo: 'Añadir prenda', render: () => {} },
   outfits: { titulo: 'Outfits', render: renderOutfits },
+  inspiracion: { titulo: 'Inspiración', render: () => renderInspiracion() },
 };
 
 function ruta() {
@@ -134,10 +102,6 @@ function renderArmario() {
     )));
 }
 
-function chip(texto, activo, onclick, colorDot) {
-  return h('button', { class: 'chip', type: 'button', 'aria-pressed': String(!!activo), onclick },
-    colorDot ? h('span', { class: 'dot', style: { background: colorDot } }) : null, texto);
-}
 
 /* ================= EDITOR DE PRENDA ================= */
 // Se usa tanto para añadir como para editar.
@@ -611,6 +575,9 @@ async function iniciar() {
   document.querySelectorAll('dialog [data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
   cerrarAlTocarFondo($('#dlg-editar'));
   cerrarAlTocarFondo($('#dlg-ajustes'));
+  cerrarAlTocarFondo($('#dlg-look'));
+
+  iniciarInspiracion({ prendas: () => estado.prendas, urlFoto, abrirEdicionPrenda: abrirEdicion });
 
   $('#btn-exportar').addEventListener('click', async () => {
     try {
@@ -626,7 +593,7 @@ async function iniciar() {
       const r = await importar(file);
       await recargarDatos();
       $('#dlg-ajustes').close();
-      toast(`Importadas ${r.prendas} prendas y ${r.outfits} outfits`);
+      toast(`Importadas ${r.prendas} prendas, ${r.outfits} outfits y ${r.looks} looks`);
       ruta();
     } catch (err) { toast(err.message || 'No se pudo importar'); }
   });

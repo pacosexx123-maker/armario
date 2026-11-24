@@ -80,6 +80,9 @@
       <h2 class="section-title">Favoritos</h2>
       <div id="favoritos" class="favs"></div>
     </section>
+
+    <!-- INSPIRACIÓN -->
+    <section id="view-inspiracion" class="view" aria-label="Inspiración" hidden></section>
   </main>
 
   <nav class="tabbar" aria-label="Navegación principal">
@@ -92,12 +95,18 @@
       <span>Añadir</span>
     </a>
     <a href="#outfits" data-tab="outfits">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7L12 3Z"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 6v4h3v11h10V10h3V6l-4-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3Z"/></svg>
       <span>Outfits</span>
+    </a>
+    <a href="#inspiracion" data-tab="inspiracion">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg>
+      <span>Inspiración</span>
     </a>
   </nav>
 
   <dialog id="dlg-editar" class="sheet" aria-label="Editar prenda"></dialog>
+  <dialog id="dlg-look" class="sheet" aria-label="Look de inspiración"></dialog>
+  <dialog id="dlg-nuevo-look" class="sheet" aria-label="Añadir look desde foto"></dialog>
 
   <dialog id="dlg-ajustes" class="sheet" aria-label="Copia de seguridad">
     <div class="sheet-head">

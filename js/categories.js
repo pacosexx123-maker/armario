@@ -1,22 +1,28 @@
 // Categorías de prendas, estilos por defecto y traducción de etiquetas de ImageNet.
 
 // slot: parte del outfit que ocupa cada categoría
+// familia: grupo de categorías intercambiables (para los looks de inspiración)
+// sust / g / n: sustantivo, género (m/f) y número (s/p) para escribir frases
 export const CATEGORIAS = [
-  { id: 'camiseta',   nombre: 'Camiseta',             slot: 'arriba',  estilos: ['casual', 'deporte'] },
-  { id: 'camisa',     nombre: 'Camisa',               slot: 'arriba',  estilos: ['formal', 'casual'] },
-  { id: 'jersey',     nombre: 'Jersey',               slot: 'arriba',  estilos: ['casual', 'formal'] },
-  { id: 'sudadera',   nombre: 'Sudadera',             slot: 'arriba',  estilos: ['casual', 'deporte'] },
-  { id: 'chaqueta',   nombre: 'Chaqueta / americana', slot: 'abrigo',  estilos: ['formal', 'casual'] },
-  { id: 'abrigo',     nombre: 'Abrigo',               slot: 'abrigo',  estilos: ['formal', 'casual'] },
-  { id: 'pantalon',   nombre: 'Pantalón',             slot: 'abajo',   estilos: ['formal', 'casual'] },
-  { id: 'vaqueros',   nombre: 'Vaqueros',             slot: 'abajo',   estilos: ['casual'] },
-  { id: 'chandal',    nombre: 'Chándal',              slot: 'abajo',   estilos: ['deporte'] },
-  { id: 'falda',      nombre: 'Falda',                slot: 'abajo',   estilos: ['casual', 'formal'] },
-  { id: 'shorts',     nombre: 'Shorts',               slot: 'abajo',   estilos: ['casual', 'deporte'] },
-  { id: 'vestido',    nombre: 'Vestido',              slot: 'vestido', estilos: ['casual', 'formal'] },
-  { id: 'zapatillas', nombre: 'Zapatillas',           slot: 'calzado', estilos: ['casual', 'deporte'] },
-  { id: 'zapatos',    nombre: 'Zapatos',              slot: 'calzado', estilos: ['formal', 'casual'] },
-  { id: 'botas',      nombre: 'Botas',                slot: 'calzado', estilos: ['casual', 'formal'] },
+  { id: 'camiseta',   nombre: 'Camiseta',             slot: 'arriba',      familia: 'arriba',  sust: 'camiseta', g: 'f', n: 's', estilos: ['casual', 'deporte'] },
+  { id: 'camisa',     nombre: 'Camisa',               slot: 'arriba',      familia: 'arriba',  sust: 'camisa', g: 'f', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'jersey',     nombre: 'Jersey',               slot: 'arriba',      familia: 'arriba',  sust: 'jersey', g: 'm', n: 's', estilos: ['casual', 'formal'] },
+  { id: 'sudadera',   nombre: 'Sudadera',             slot: 'arriba',      familia: 'arriba',  sust: 'sudadera', g: 'f', n: 's', estilos: ['casual', 'deporte'] },
+  { id: 'chaqueta',   nombre: 'Chaqueta / americana', slot: 'abrigo',      familia: 'capa',    sust: 'chaqueta o americana', g: 'f', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'abrigo',     nombre: 'Abrigo',               slot: 'abrigo',      familia: 'capa',    sust: 'abrigo', g: 'm', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'pantalon',   nombre: 'Pantalón',             slot: 'abajo',       familia: 'abajo',   sust: 'pantalón', g: 'm', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'vaqueros',   nombre: 'Vaqueros',             slot: 'abajo',       familia: 'abajo',   sust: 'vaqueros', g: 'm', n: 'p', estilos: ['casual'] },
+  { id: 'chandal',    nombre: 'Chándal',              slot: 'abajo',       familia: 'abajo',   sust: 'pantalón de chándal', g: 'm', n: 's', estilos: ['deporte'] },
+  { id: 'falda',      nombre: 'Falda',                slot: 'abajo',       familia: 'abajo',   sust: 'falda', g: 'f', n: 's', estilos: ['casual', 'formal'] },
+  { id: 'shorts',     nombre: 'Shorts',               slot: 'abajo',       familia: 'abajo',   sust: 'shorts', g: 'm', n: 'p', estilos: ['casual', 'deporte'] },
+  { id: 'vestido',    nombre: 'Vestido',              slot: 'vestido',     familia: 'vestido', sust: 'vestido', g: 'm', n: 's', estilos: ['casual', 'formal'] },
+  { id: 'zapatillas', nombre: 'Zapatillas',           slot: 'calzado',     familia: 'calzado', sust: 'zapatillas', g: 'f', n: 'p', estilos: ['casual', 'deporte'] },
+  { id: 'zapatos',    nombre: 'Zapatos',              slot: 'calzado',     familia: 'calzado', sust: 'zapatos', g: 'm', n: 'p', estilos: ['formal', 'casual'] },
+  { id: 'botas',      nombre: 'Botas',                slot: 'calzado',     familia: 'calzado', sust: 'botas', g: 'f', n: 'p', estilos: ['casual', 'formal'] },
+  { id: 'bolso',      nombre: 'Bolso',                slot: 'complemento', familia: 'bolso',   sust: 'bolso', g: 'm', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'bufanda',    nombre: 'Bufanda',              slot: 'complemento', familia: 'bufanda', sust: 'bufanda', g: 'f', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'cinturon',   nombre: 'Cinturón',             slot: 'complemento', familia: 'cinturon', sust: 'cinturón', g: 'm', n: 's', estilos: ['formal', 'casual'] },
+  { id: 'gorro',      nombre: 'Gorro / sombrero',     slot: 'complemento', familia: 'gorro',   sust: 'gorro o sombrero', g: 'm', n: 's', estilos: ['casual', 'deporte'] },
 ];
 
 export const ESTILOS = [
@@ -29,6 +35,7 @@ const POR_ID = Object.fromEntries(CATEGORIAS.map((c) => [c.id, c]));
 export const categoria = (id) => POR_ID[id];
 export const nombreCategoria = (id) => (POR_ID[id] ? POR_ID[id].nombre : 'Sin categoría');
 export const estilosPorDefecto = (id) => (POR_ID[id] ? [...POR_ID[id].estilos] : ['casual']);
+export const esComplemento = (id) => POR_ID[id] && POR_ID[id].slot === 'complemento';
 
 // Etiqueta de ImageNet (primer sinónimo, en minúsculas) → [categoría, fiabilidad 0–1]
 // La fiabilidad baja indica pistas indirectas (p. ej. una corbata suele ir con camisa).
@@ -48,7 +55,6 @@ export const IMAGENET_A_CATEGORIA = {
   'fur coat':         ['abrigo', 1],
   'cloak':            ['abrigo', 0.7],
   'poncho':           ['abrigo', 0.6],
-  'stole':            ['abrigo', 0.4],
   'jean':             ['vaqueros', 1],    // "jean, blue jean, denim"
   'pajama':           ['chandal', 0.5],
   'miniskirt':        ['falda', 1],
@@ -66,4 +72,14 @@ export const IMAGENET_A_CATEGORIA = {
   'clog':             ['zapatos', 0.8],
   'sandal':           ['zapatos', 0.8],
   'cowboy boot':      ['botas', 1],
+  'purse':            ['bolso', 1],
+  'mailbag':          ['bolso', 0.7],
+  'backpack':         ['bolso', 0.6],
+  'wallet':           ['bolso', 0.4],
+  'stole':            ['bufanda', 0.7],
+  'feather boa':      ['bufanda', 0.6],
+  'buckle':           ['cinturon', 0.6],
+  'cowboy hat':       ['gorro', 1],
+  'sombrero':         ['gorro', 1],
+  'bonnet':           ['gorro', 0.6],
 };

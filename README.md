@@ -13,13 +13,45 @@ Armario digital para el móvil. Haz una foto a cada prenda: la app reconoce qué
 | **Armario** | Cuadrícula con tus prendas, filtros por categoría y por color. Toca una prenda para editarla o borrarla. |
 | **Añadir** | Haz una foto o elige una de la galería. La app detecta el color dominante (HEX + nombre) y sugiere la categoría con MobileNet. Puedes tocar la foto para coger el color de un punto, ajustarlo a mano y cambiar la categoría y los estilos. Con «Escanear etiqueta» lee la etiqueta interior (OCR) y rellena marca, talla, composición, país de fabricación y cuidados. |
 | **Outfits** | Elige estilo (Formal, Arreglado, Informal, Deportivo), activa o no el abrigo y pulsa «Generar outfit». «Otro» da una alternativa y puedes guardar tus favoritos. |
+| **Inspiración** | 50 looks de referencia (y los tuyos) ordenados por parecido con tu armario, con filtros por estilo y temporada. Cada look muestra la referencia junto a «tu versión», el % de parecido, prenda a prenda, y la lista «Te falta». Con «Añadir look desde foto» subes una captura de un outfit: la app detecta las prendas y sus colores y lo guarda como «Mío». |
 
-El botón de la esquina superior derecha abre la **copia de seguridad**: exporta todo (con fotos) a un archivo `.json` o impórtalo después.
+El botón de la esquina superior derecha abre la **copia de seguridad**: exporta todo (con fotos y tus looks) a un archivo `.json` o impórtalo después.
+
+## Inspiración: cómo funciona el parecido
+
+Un look es una «receta»: una lista de huecos, cada uno con **categoría**, **color** (HEX) y **rol** (`base`, `acento` o `neutro`), más un estilo y una temporada. Para cada hueco la app busca tu prenda más parecida y le da una puntuación de 0 a 100:
+
+- **Categoría:** la misma categoría vale 100 %. Si no la tienes, se acepta una de la misma familia con penalización: chaqueta ↔ abrigo, zapatos ↔ botas ↔ zapatillas, camiseta ↔ camisa ↔ jersey ↔ sudadera, pantalón ↔ vaqueros ↔ chándal. La penalización depende del estilo: en deportivo el chándal sustituye bien al pantalón, en formal unos vaqueros no.
+- **Color:** distancia CIEDE2000 en Lab. Negro / gris marengo / azul marino, beige / camel / crudo y blanco / crudo cuentan casi como el mismo color. En los huecos `acento` el color pesa más y en los `neutro`, menos.
+- Cada prenda se usa una sola vez por look. A partir de 55 puntos la prenda cuenta como «parecida»; si no, el hueco va a la lista **Te falta**. Si hay varias prendas buenas para un hueco, el botón ↻ muestra la siguiente.
+
+**Detección automática (looks desde foto):** usa [transformers.js](https://huggingface.co/docs/transformers.js) con el modelo [`Xenova/segformer_b2_clothes`](https://huggingface.co/Xenova/segformer_b2_clothes), en versión cuantizada de unos 29 MB. Se descarga la primera vez y queda guardado en el móvil. Detecta la parte de arriba, el pantalón, la falda, el vestido, el calzado, el bolso, la bufanda, el cinturón y el gorro. El color de cada prenda se calcula solo con los píxeles de su máscara. El modelo no distingue camiseta, camisa, jersey ni chaqueta, así que la app te pide confirmarlo. Si falta algo, tócalo en la foto para añadirlo a mano; también puedes borrar detecciones erróneas.
+
+### Añadir looks a la biblioteca (`looks.json`)
+
+Cada look es un objeto dentro de la lista `looks`. Copia uno existente y cámbialo:
+
+```json
+{ "id": "mi-look-nuevo", "nombre": "Jersey verde con pantalón crudo", "estilo": "informal", "temporada": "invierno", "huecos": [
+  { "categoria": "jersey", "color": "#1e4631", "rol": "acento" },
+  { "categoria": "pantalon", "color": "#ebe3d2", "rol": "base" },
+  { "categoria": "botas", "color": "#5e3f2a", "rol": "neutro" }
+] }
+```
+
+- `id`: único, sin espacios.
+- `estilo`: `formal`, `arreglado`, `informal` o `deportivo`.
+- `temporada`: `verano`, `invierno` o `todo el año`.
+- `categoria`: `camiseta`, `camisa`, `jersey`, `sudadera`, `chaqueta`, `abrigo`, `pantalon`, `vaqueros`, `chandal`, `falda`, `shorts`, `vestido`, `zapatillas`, `zapatos`, `botas`, `bolso`, `bufanda`, `cinturon` o `gorro`.
+- `color`: HEX de 6 dígitos en minúsculas, por ejemplo `#1d2741`.
+
+Los looks con algún dato incorrecto se ignoran y la consola del navegador avisa de cuál es. Después de editar el archivo, sube el número de `VERSION` en `sw.js`.
 
 ## Estructura
 
 ```
-├── index.html          Página única con las tres pestañas
+├── index.html          Página única con las cuatro pestañas
+├── looks.json          Biblioteca de 50 looks de inspiración (editable a mano)
 ├── manifest.json       Manifiesto de la PWA (nombre, iconos, colores)
 ├── sw.js               Service worker (caché para modo offline)
 ├── .nojekyll           Indica a GitHub Pages que sirva los archivos tal cual
@@ -34,6 +66,12 @@ El botón de la esquina superior derecha abre la **copia de seguridad**: exporta
     ├── classifier.js   TensorFlow.js + MobileNet (carga diferida)
     ├── outfits.js      Generador de outfits y armonía de color
     ├── label.js        Lectura de etiquetas con Tesseract.js (OCR)
+    ├── matching.js     Parecido entre un look y tu armario (familias, CIEDE2000)
+    ├── illustration.js Ilustraciones de los looks (iconos de prenda en SVG)
+    ├── inspiration.js  Pestaña Inspiración (lista, filtros, comparación)
+    ├── lookeditor.js   Añadir / editar un look desde foto (manual + automático)
+    ├── segment.js      Detección de prendas con transformers.js + SegFormer
+    ├── ui.js           Utilidades de interfaz compartidas
     └── backup.js       Exportar / importar en JSON
 ```
 

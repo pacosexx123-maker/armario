@@ -13,7 +13,7 @@ export const ESTILOS_OUTFIT = {
 };
 
 const MAX_COMBINACIONES = 4000;
-const ORDEN_SLOT = { arriba: 0, vestido: 0, abajo: 1, calzado: 2, abrigo: 3 };
+const ORDEN_SLOT = { arriba: 0, vestido: 0, abajo: 1, calzado: 2, abrigo: 3, complemento: 4 };
 
 export const claveOutfit = (ids) => [...ids].sort().join('|');
 
@@ -103,7 +103,7 @@ function explicar(infos) {
 export function generarOutfit(todas, estilo, { incluirAbrigo = false, evitar = null } = {}) {
   const def = ESTILOS_OUTFIT[estilo];
   const validas = todas.filter((p) => categoria(p.categoria) && p.color && def.acepta(p));
-  const por = { arriba: [], abajo: [], vestido: [], calzado: [], abrigo: [] };
+  const por = { arriba: [], abajo: [], vestido: [], calzado: [], abrigo: [], complemento: [] };
   validas.forEach((p) => por[categoria(p.categoria).slot].push(p));
 
   const bases = [];
