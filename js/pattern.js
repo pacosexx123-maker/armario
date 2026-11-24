@@ -70,28 +70,35 @@ export function colorEstampado(base, e) {
 
 /* ---------- Dibujo ---------- */
 
-function tesela(base, e) {
+// Dibujo de una tesela del estampado (sin el fondo), de lado P. `escala` permite usarla
+// tanto en muestras CSS (en píxeles) como dentro de una ilustración SVG (en sus unidades).
+export function cuerpoTesela(base, e, escala = 1) {
   const est = normalizarEstampado(e);
   const c2 = colorEstampado(base, est);
   let P, cuerpo;
   if (est.tipo === 'rayas') {
-    P = { fino: 6, medio: 12, grueso: 22 }[est.tamano];
-    const g = Math.round(P * (est.tamano === 'fino' ? 0.4 : 0.45) * 10) / 10;
+    P = { fino: 6, medio: 12, grueso: 22 }[est.tamano] * escala;
+    const g = P * (est.tamano === 'fino' ? 0.4 : 0.45);
     cuerpo = est.orientacion === 'vertical'
       ? `<rect width="${g}" height="${P}" fill="${c2}"/>`
       : `<rect width="${P}" height="${g}" fill="${c2}"/>`;
   } else if (est.tipo === 'cuadros') {
-    P = { pequeno: 10, mediano: 18, grande: 30 }[est.tamano];
+    P = { pequeno: 10, mediano: 18, grande: 30 }[est.tamano] * escala;
     const b = P / 2;
     cuerpo = `<g fill="${c2}" fill-opacity=".55"><rect width="${b}" height="${P}"/><rect width="${P}" height="${b}"/></g>`;
   } else if (est.tipo === 'topos') {
-    P = est.tamano === 'grandes' ? 22 : 10;
+    P = (est.tamano === 'grandes' ? 22 : 10) * escala;
     const r = P * (est.tamano === 'grandes' ? 0.22 : 0.18);
     cuerpo = `<g fill="${c2}"><circle cx="${P / 4}" cy="${P / 4}" r="${r}"/><circle cx="${(3 * P) / 4}" cy="${(3 * P) / 4}" r="${r}"/></g>`;
   } else {
-    P = 28;
-    cuerpo = `<g fill="${c2}"><circle cx="6" cy="7" r="4"/><circle cx="20" cy="18" r="5.5"/><circle cx="21" cy="5" r="2"/><circle cx="8" cy="22" r="2.5"/><path d="M13 10q3-3 6 0" stroke="${c2}" stroke-width="1.6" fill="none"/></g>`;
+    P = 28 * escala;
+    cuerpo = `<g fill="${c2}" transform="scale(${escala})"><circle cx="6" cy="7" r="4"/><circle cx="20" cy="18" r="5.5"/><circle cx="21" cy="5" r="2"/><circle cx="8" cy="22" r="2.5"/><path d="M13 10q3-3 6 0" stroke="${c2}" stroke-width="1.6" fill="none"/></g>`;
   }
+  return { P, cuerpo };
+}
+
+function tesela(base, e) {
+  const { P, cuerpo } = cuerpoTesela(base, e, 1);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${P}" height="${P}"><rect width="${P}" height="${P}" fill="${base}"/>${cuerpo}</svg>`;
   return { svg, P };
 }

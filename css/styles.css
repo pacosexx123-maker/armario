@@ -22,8 +22,18 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+/* Comportamiento de app nativa: sin zoom por doble toque, sin rebote y sin desplazamiento lateral.
+   (El pellizco lo bloquea el meta viewport; solo el visor de fotos permite ampliar.) */
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  overflow-x: clip;
+}
 body {
+  overscroll-behavior: none;
+  overflow-x: clip;
+  touch-action: manipulation;
   margin: 0;
   background: var(--bg);
   color: var(--ink);
@@ -411,16 +421,16 @@ svg.mini-icono { width: 34px; height: 34px; fill: none; stroke: none; }
 .hueco-swatch { display: block; width: 38px; height: 38px; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
 .hueco-color input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .hueco-hex { flex: 1; min-width: 0; display: grid; gap: 1px; }
-.hueco-hex .hex-input { width: 100%; max-width: 11.5ch; height: 32px; padding: 0 8px; font-size: 15px; }
+.hueco-hex .hex-input { width: 100%; max-width: 11.5ch; height: 34px; padding: 0 8px; font-size: 16px; }
 .hueco-color-nombre { font-size: 12px; color: var(--muted); }
 .hueco-fila .icon-btn { width: 38px; height: 38px; flex: none; }
 .hueco-fila .icon-btn svg { width: 18px; height: 18px; }
 .icon-btn.activo { background: var(--ink); color: #fff; border-color: var(--ink); }
 .hueco-fila2 { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 8px; }
-.hueco-fila2 select { height: 42px; font-size: 15px; }
+.hueco-fila2 select { height: 42px; font-size: 16px; }
 .hueco-aviso { margin: 0; font-size: 12px; color: var(--accent); font-weight: 600; }
 .look-campos { display: grid; gap: 10px; }
-.look-campos select { height: 44px; font-size: 15px; }
+.look-campos select { height: 44px; font-size: 16px; }
 .look-campos .fields { margin-top: 0; }
 .field input[type="text"] { width: 100%; }
 
@@ -448,6 +458,7 @@ svg.mini-icono { width: 34px; height: 34px; fill: none; stroke: none; }
   border: 0; border-radius: 24px 24px 0 0; background: var(--bg); color: var(--ink);
   overflow-y: auto;
 }
+.sheet { overscroll-behavior: contain; }
 .sheet::backdrop { background: rgba(28, 26, 24, .45); }
 .sheet[open] { animation: up .22s ease-out; }
 @keyframes up { from { transform: translateY(40px); opacity: .4; } }
@@ -463,3 +474,49 @@ svg.mini-icono { width: 34px; height: 34px; fill: none; stroke: none; }
   transition: opacity .2s, transform .2s; z-index: 50;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ----- Básicos (prendas sin foto) ----- */
+button.big-btn { width: 100%; border: 0; text-align: left; font: inherit; font-weight: 600; font-size: 17px; }
+button.big-btn.secondary { border: 1px solid var(--line); }
+.big-btn small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+.catalogo-cab { display: flex; align-items: baseline; justify-content: space-between; }
+.catalogo-cab .section-title { margin: 8px 0 4px; }
+.catalogo-grupo .sub-title { margin-top: 18px; }
+.catalogo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 560px) { .catalogo { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.basico-card {
+  display: grid; justify-items: center; gap: 6px; padding: 10px 6px 12px; border: 0; border-radius: 14px;
+  background: var(--surface); box-shadow: var(--shadow); text-align: center;
+}
+.basico-card:active { transform: scale(.97); }
+.basico-mini { width: 100%; max-width: 84px; aspect-ratio: 3 / 4; border-radius: 10px; background: var(--surface-2); display: block; overflow: hidden; }
+.basico-mini svg, .basico-ilus svg { width: 100%; height: 100%; display: block; fill: none; stroke: none; }
+.basico-nombre { font-size: 12px; font-weight: 600; line-height: 1.25; }
+.volver-catalogo { margin: 0 0 8px; padding: 4px 0; }
+.basico-ilus { aspect-ratio: 3 / 4; max-height: 52vh; margin: 0 auto; width: min(100%, calc(52vh * .75)); background: var(--surface-2); }
+.zona-foto { display: grid; gap: 10px; }
+.anadir-foto { justify-content: center; }
+.nombre-prenda { margin-top: 12px; }
+
+/* Botón para ver una foto a pantalla completa */
+.foto-ampliar {
+  position: absolute; top: 10px; right: 10px; z-index: 2; width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; padding: 0; border: 0;
+  background: rgba(255,255,255,.9); color: var(--ink); box-shadow: 0 1px 6px rgba(0,0,0,.18); cursor: zoom-in;
+}
+.foto-ampliar svg { width: 18px; height: 18px; stroke-width: 2.2; }
+button.cmp-ref.foto { position: relative; display: block; width: 100%; padding: 0; border: 0; cursor: zoom-in; }
+
+/* Visor de fotos: lo único que se puede ampliar (pellizco y doble toque gestionados por la app) */
+.visor {
+  width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; inset: 0;
+  background: #0d0d0d; color: #fff; overscroll-behavior: none;
+}
+.visor::backdrop { background: #000; }
+.visor-zona { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
+.visor-img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: 0 0; user-select: none; -webkit-user-drag: none; will-change: transform; }
+.visor-cerrar { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 2; background: rgba(255,255,255,.92); color: var(--ink); border: 0; }
+.visor-ayuda { position: absolute; left: 0; right: 0; bottom: calc(18px + var(--safe-b)); margin: 0; text-align: center; font-size: 12px; color: rgba(255,255,255,.7); pointer-events: none; }
+
+/* Ningún campo por debajo de 16 px: así el móvil no hace zoom al tocarlo */
+input:not([type="checkbox"]):not([type="color"]):not([type="file"]), select, textarea { font-size: max(16px, 1em) !important; }

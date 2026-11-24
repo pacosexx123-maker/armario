@@ -3,6 +3,7 @@
 
 import { hexToLab } from './color.js';
 import { categoria as infoCategoria } from './categories.js';
+import { normalizarEstampado, cuerpoTesela } from './pattern.js';
 
 // Iconos dibujados en una caja de 100×100: d = silueta rellena, det = detalles (líneas),
 // atras = piezas que van detrás (capucha), frente = piezas rellenas encima (pompón)
@@ -26,7 +27,50 @@ const ICONOS = {
   bufanda: { d: 'M18 8L82 8L82 26L64 26L66 88L48 88L46 26L18 26Z', det: 'M50 88L50 96M55 88L55 96M60 88L60 96M18 17L82 17' },
   cinturon: { d: 'M2 40L98 40L98 58L2 58Z', det: 'M60 35L76 35L76 63L60 63ZM68 49L86 49' },
   gorro: { d: 'M18 72Q18 24 50 24Q82 24 82 72Z', det: 'M16 62L84 62L84 76L16 76Z', frente: 'M44 22a6 6 0 1 0 12 0a6 6 0 1 0 -12 0' },
+  // Variantes para el catálogo de básicos
+  camiseta_ml: { d: 'M30 10L42 6Q50 14 58 6L70 10L84 18L96 72L84 76L72 38L72 96L28 96L28 38L16 76L4 72L16 18Z', det: 'M42 6Q50 18 58 6' },
+  polo: { d: 'M30 10L42 6Q50 14 58 6L70 10L92 26L82 40L72 34L72 94L28 94L28 34L18 40L8 26Z', det: 'M42 6L45 17L50 12L55 17L58 6M50 12L50 32M50 20L50 20M50 27L50 27' },
+  jersey_pico: { d: 'M32 8Q50 18 68 8L84 18L96 72L84 76L72 38L72 96L28 96L28 38L16 76L4 72L16 18Z', det: 'M35 9L50 32L65 9M28 88L72 88M4 66L16 70M96 66L84 70' },
+  cuello_alto: { d: 'M38 0L62 0L62 10L84 18L96 72L84 76L72 38L72 96L28 96L28 38L16 76L4 72L16 18L38 10Z', det: 'M38 5L62 5M38 10L62 10M28 88L72 88M4 66L16 70M96 66L84 70' },
+  cardigan: { d: 'M32 8Q50 18 68 8L84 18L96 72L84 76L72 38L72 96L28 96L28 38L16 76L4 72L16 18Z', det: 'M50 22L50 96M35 9L50 22L65 9M45 36L45 36M45 52L45 52M45 68L45 68M28 88L72 88' },
+  sudadera: { d: 'M32 8Q50 18 68 8L84 18L96 72L84 76L72 38L72 96L28 96L28 38L16 76L4 72L16 18Z', det: 'M36 9Q50 22 64 9M28 88L72 88M4 66L16 70M96 66L84 70' },
+  sudadera_capucha: { atras: 'M33 11Q35 -3 50 -3Q65 -3 67 11Q50 21 33 11Z', d: 'M32 8Q50 18 68 8L84 18L96 72L84 76L72 38L72 96L28 96L28 38L16 76L4 72L16 18Z', det: 'M38 60L62 60L66 78L34 78ZM28 88L72 88M46 14L45 30M54 14L55 30' },
+  chaqueta_vaquera: { d: 'M32 6L68 6L84 16L96 74L84 78L72 38L72 88L28 88L28 38L16 78L4 74L16 16Z', det: 'M50 18L50 88M36 6L50 18L64 6M32 32L46 32L46 44L32 44ZM54 32L68 32L68 44L54 44ZM28 80L72 80M50 50L50 50M50 64L50 64' },
+  pitillo: { d: 'M30 4L70 4L71 96L56 96L50 30L44 96L29 96Z', det: 'M30 12L70 12M50 12L50 30M34 14Q36 24 45 22M66 14Q64 24 55 22' },
+  pantalon_traje: { d: 'M26 4L74 4L80 96L58 96L50 30L42 96L20 96Z', det: 'M26 12L74 12M50 12L50 30M34 30L31 96M66 30L69 96' },
+  mocasines: { d: 'M4 72Q6 58 22 58L50 56Q62 52 74 54L92 62Q99 70 92 74L4 74Z', det: 'M4 70L95 70M50 58Q58 65 72 60M54 62L68 60' },
+  botines: { d: 'M28 30L52 30L54 58L84 64Q96 68 94 80L24 80Z', det: 'M24 74L94 74M40 30L40 56M28 36L52 36' },
+  sandalias: { d: 'M6 74Q8 68 20 68L84 66Q96 68 94 76L6 78ZM30 68Q40 48 54 66L49 66Q40 55 35 68ZM58 66Q66 50 76 66L71 66Q66 57 63 66Z', det: 'M8 74L93 74' },
 };
+
+// Silueta de una prenda (icono) rellena con su color de base y con el estampado
+// dibujado encima, recortado por la silueta. Devuelve un SVG en texto (proporción 3:4).
+let siguienteId = 0;
+// El calzado es bajo y ancho: se encuadra más de cerca para que no quede diminuto
+const ENCUADRE = {
+  zapatillas: '-2 -11 104 139', zapatos: '-2 -7 104 139', mocasines: '-2 -6 104 139',
+  sandalias: '-2 -6 104 139', botas: '-2 -26 104 139', botines: '-2 -14 104 139',
+};
+export function svgPrenda(icono, base, estampado, { fondo = true } = {}) {
+  const ic = ICONOS[icono] || ICONOS.camiseta;
+  const est = normalizarEstampado(estampado);
+  const id = `pr${++siguienteId}`;
+  const formas = (ic.atras ? `<path d="${ic.atras}"/>` : '') + `<path d="${ic.d}"/>` + (ic.frente ? `<path d="${ic.frente}"/>` : '');
+  let defs = '', capaEstampado = '';
+  if (est.tipo !== 'liso') {
+    const { P, cuerpo } = cuerpoTesela(base, est, 0.62);
+    defs = `<defs><pattern id="${id}e" patternUnits="userSpaceOnUse" width="${P}" height="${P}">${cuerpo}</pattern>`
+      + `<clipPath id="${id}c">${formas}</clipPath></defs>`;
+    capaEstampado = `<rect x="-10" y="-30" width="120" height="160" fill="url(#${id}e)" clip-path="url(#${id}c)"/>`;
+  }
+  const st = trazo(base);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ENCUADRE[icono] || '-10 -30 120 160'}" width="600" height="800">${defs}`
+    + (fondo ? '<rect x="-10" y="-30" width="120" height="160" fill="#efebe5"/>' : '')
+    + `<g fill="${base}">${formas}</g>${capaEstampado}`
+    + `<g fill="none" stroke="${st}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">${formas}${ic.det ? `<path d="${ic.det}"/>` : ''}</g></svg>`;
+}
+
+export const svgADataURL = (svg) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 
 // Posición en el lienzo (120 × 150) según la familia/categoría: [x, y, ancho, alto]
 const CAJAS = {

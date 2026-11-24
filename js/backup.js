@@ -45,9 +45,10 @@ export async function importar(file) {
   if (!datos || datos.formato !== FORMATO || !Array.isArray(datos.prendas)) {
     throw new Error('Este archivo no es una copia de Armario.');
   }
+  // Las prendas sin foto (básicos) también se importan
   const prendas = datos.prendas
-    .filter((p) => p && p.id && p.foto)
-    .map(({ foto, ...resto }) => ({ ...resto, foto: dataURLToBlob(foto) }));
+    .filter((p) => p && p.id && (p.foto || p.basico))
+    .map(({ foto, ...resto }) => ({ ...resto, foto: foto ? dataURLToBlob(foto) : null }));
   const outfits = (datos.outfits || []).filter((o) => o && o.id && Array.isArray(o.ids));
   const looks = (datos.looks || [])
     .filter((l) => l && l.id && Array.isArray(l.huecos))

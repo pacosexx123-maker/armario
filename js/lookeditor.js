@@ -3,7 +3,7 @@
 // Modo automático: detección de prendas con SegFormer (segment.js), encima del manual.
 
 import * as db from './db.js';
-import { $, h, toast, botonIcono, ICONOS } from './ui.js';
+import { $, h, toast, botonIcono, ICONOS, mostrarFotoGrande } from './ui.js';
 import { blobToCanvas, canvasToJpeg } from './image.js';
 import { colorEnPunto, describirColor, infoColor } from './color.js';
 import { CATEGORIAS, categoria as infoCategoria } from './categories.js';
@@ -53,7 +53,13 @@ export async function abrirEditorLook({ look = null, onGuardado }) {
 
   const img = h('img', { alt: 'Foto del look', draggable: 'false' });
   const overlay = h('canvas', { class: 'look-overlay', 'aria-hidden': 'true' });
-  const wrapFoto = h('div', { class: 'look-foto' }, img, overlay);
+  // Botón para ver la foto a pantalla completa (tocar la foto añade prendas)
+  const btnAmpliar = h('button', {
+    class: 'foto-ampliar', type: 'button', 'aria-label': 'Ver la foto a pantalla completa', title: 'Ver la foto a pantalla completa',
+    html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+    onclick: (e) => { e.stopPropagation(); if (st.fotoURL) mostrarFotoGrande(st.fotoURL, 'Foto del look'); },
+  });
+  const wrapFoto = h('div', { class: 'look-foto' }, img, overlay, btnAmpliar);
   const pista = h('p', { class: 'look-pista' });
   const lista = h('div', { class: 'huecos-edit' });
   const btnDetectar = botonIcono('btn mini', 'diana', 'Detectar prendas', () => detectar());

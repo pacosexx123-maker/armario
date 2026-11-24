@@ -5,7 +5,9 @@ import { extraerColorDominante, colorEnPunto, describirColor, NOMBRES_COLOR, col
 import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categories.js';
 import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
-import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande } from './ui.js';
+import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande, mostrarFotoGrande } from './ui.js';
+import { svgPrenda, svgADataURL } from './illustration.js';
+import { GRUPOS_BASICOS } from './basics.js';
 import { crearPaleta } from './palette.js';
 import { crearEditorEstampado, detectarEstampado, estampadoDe, normalizarEstampado, fondoEstampado, textoSugerencia } from './pattern.js';
 import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
@@ -20,15 +22,28 @@ const estado = {
   incluirAbrigo: leerPref('incluirAbrigo', 'false') === 'true',
   outfitActual: null,
 };
-const urls = new Map(); // id de prenda → URL de su foto
+const urls = new Map(); // id de prenda → { firma, url } de su foto o de su ilustración
 
+// URL de la imagen de una prenda: su foto o, si no tiene (básico), su ilustración SVG
+// con el color de base y el estampado. Así se ve igual en todas las pantallas.
 function urlFoto(p) {
-  if (!urls.has(p.id)) urls.set(p.id, URL.createObjectURL(p.foto));
-  return urls.get(p.id);
+  const firma = p.foto ? 'foto' : JSON.stringify([p.basico?.icono || p.categoria, p.color?.hex, p.estampado]);
+  const actual = urls.get(p.id);
+  if (actual && actual.firma === firma) return actual.url;
+  if (actual) liberarFoto(p.id);
+  const url = p.foto
+    ? URL.createObjectURL(p.foto)
+    : svgADataURL(svgPrenda(p.basico?.icono || p.categoria, p.color?.hex || '#cccccc', p.estampado));
+  urls.set(p.id, { firma, url });
+  return url;
 }
 function liberarFoto(id) {
-  if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
+  const actual = urls.get(id);
+  if (!actual) return;
+  if (actual.url.startsWith('blob:')) URL.revokeObjectURL(actual.url);
+  urls.delete(id);
 }
+const nombrePrenda = (p) => p.nombre || nombreCategoria(p.categoria);
 
 async function recargarDatos() {
   const [prendas, favoritos] = await Promise.all([db.getAll('prendas'), db.getAll('outfits')]);
@@ -95,11 +110,11 @@ function renderArmario() {
     : `${visibles.length} de ${prendas.length} prendas`;
 
   grid.replaceChildren(...visibles.map((p) =>
-    h('button', { class: 'item', type: 'button', onclick: () => abrirEdicion(p), 'aria-label': `Editar ${nombreCategoria(p.categoria)} ${p.color?.nombre || ''}` },
+    h('button', { class: 'item', type: 'button', onclick: () => abrirEdicion(p), 'aria-label': `Editar ${nombrePrenda(p)} ${p.color?.nombre || ''}` },
       h('img', { src: urlFoto(p), alt: '', loading: 'lazy', decoding: 'async' }),
       h('div', { class: 'meta' },
         h('span', { class: 'dot', style: { background: fondoEstampado(p.color?.hex || '#cccccc', p.estampado, { dividido: true }) } }),
-        h('span', { class: 'name' }, nombreCategoria(p.categoria)),
+        h('span', { class: 'name' }, nombrePrenda(p)),
         h('span', { class: 'sub' }, p.color?.nombre || '')),
       (p.etiqueta?.marca || p.etiqueta?.talla)
         ? h('div', { class: 'meta2' }, [p.etiqueta.marca, p.etiqueta.talla && `Talla ${p.etiqueta.talla}`].filter(Boolean).join(' · '))
@@ -111,21 +126,26 @@ function renderArmario() {
 /* ================= EDITOR DE PRENDA ================= */
 // Se usa tanto para añadir como para editar.
 // calcularAuto(balanceActivo): recalcula el color automático (solo al añadir una prenda nueva)
-function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etiqueta = null, estampado = null, notaEstampado = '', modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
+// basico: { id, icono } si la prenda se creó sin foto (se muestra con su ilustración).
+function crearEditor({ blob = null, canvas = null, color, categoria = '', estilos = [], etiqueta = null, estampado = null, notaEstampado = '', basico = null, nombrePrenda = '', modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
   const st = {
     estampado: normalizarEstampado(estampado),
     estampadoTocado: modo === 'editar',
     color: { hex: color.hex, nombre: color.nombre },
     colorAuto: { hex: color.hex, nombre: color.nombre },
-    colorEsAuto: modo !== 'editar',   // si sigue siendo el automático, se recalcula al cambiar «Fondo blanco»
+    colorEsAuto: modo !== 'editar' && !basico, // si sigue siendo el automático, se recalcula al cambiar «Fondo blanco»
     balance: color.balance || null,   // resultado del balance de blancos con el fondo
     categoria,
     estilos: new Set(estilos),
-    estilosTocados: modo === 'editar',
-    categoriaTocada: modo === 'editar',
+    estilosTocados: modo === 'editar' || !!basico,
+    categoriaTocada: modo === 'editar' || !!basico,
+    nombre: nombrePrenda || '',
+    foto: blob,                       // foto actual (puede añadirse después a un básico)
+    canvas,
+    fotoNueva: false,
     cerrado: false,
   };
-  const fotoURL = URL.createObjectURL(blob);
+  let fotoURL = blob ? URL.createObjectURL(blob) : null;
   const gananciasFoto = () => (st.balance && st.balance.aplicado ? st.balance.ganancias : null);
 
   // Tocar una imagen (con object-fit: contain) → color medio de esa zona y posición de la marca
@@ -146,13 +166,57 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
 
   // Foto (tocar para elegir color; se aplica la misma corrección de blancos que al color automático)
   const marca = h('div', { class: 'picker-mark', hidden: true });
-  const img = h('img', { src: fotoURL, alt: 'Foto de la prenda', draggable: 'false' });
-  const wrap = h('div', { class: 'photo-wrap' }, img, marca,
+  const img = h('img', { src: fotoURL || '', alt: 'Foto de la prenda', draggable: 'false' });
+  const btnAmpliarFoto = h('button', {
+    class: 'foto-ampliar', type: 'button', 'aria-label': 'Ver la foto a pantalla completa', title: 'Ver la foto a pantalla completa',
+    html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+    onclick: (e) => { e.stopPropagation(); mostrarFotoGrande(fotoURL, 'Foto de la prenda'); },
+  });
+  const wrapFoto = h('div', { class: 'photo-wrap' }, img, marca, btnAmpliarFoto,
     h('div', { class: 'photo-hint' }, 'Toca la foto para tomar el color de ese punto'));
   img.addEventListener('click', (e) => {
-    const c = colorDeToque(e, img, canvas, marca, gananciasFoto());
+    if (!st.canvas) return;
+    const c = colorDeToque(e, img, st.canvas, marca, gananciasFoto());
     if (c) { if (marcaOtra) marcaOtra.hidden = true; ponerColor(c); }
   });
+
+  // Sin foto (básico): ilustración que se actualiza en directo con el color y el estampado
+  const iconoBasico = basico ? basico.icono : categoria;
+  const ilustracion = h('div', { class: 'photo-wrap basico-ilus', role: 'img', 'aria-label': 'Ilustración de la prenda' });
+  const pintarIlustracion = () => {
+    if (!st.foto) ilustracion.innerHTML = svgPrenda(iconoBasico, st.color.hex, st.estampado, { fondo: false });
+  };
+  // Añadir una foto más tarde (se conservan todos los datos de la prenda)
+  const inputFotoGal = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  const inputFotoCam = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true });
+  const alAnadirFoto = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const r = await processPhoto(file);
+      if (st.cerrado) return;
+      st.foto = r.blob; st.canvas = r.canvas; st.fotoNueva = true;
+      if (fotoURL) URL.revokeObjectURL(fotoURL);
+      fotoURL = URL.createObjectURL(r.blob);
+      img.src = fotoURL;
+      montarZonaFoto();
+      toast('Foto añadida: se guardará al pulsar «Guardar»');
+    } catch { toast('No se pudo abrir la foto'); }
+  };
+  inputFotoGal.addEventListener('change', alAnadirFoto);
+  inputFotoCam.addEventListener('change', alAnadirFoto);
+  const zonaFoto = h('div', { class: 'zona-foto' });
+  function montarZonaFoto() {
+    if (st.foto) zonaFoto.replaceChildren(wrapFoto);
+    else {
+      pintarIlustracion();
+      zonaFoto.replaceChildren(ilustracion,
+        h('div', { class: 'fila-botones anadir-foto' },
+          h('label', { class: 'btn mini' }, inputFotoCam, 'Hacer foto'),
+          h('label', { class: 'btn mini' }, inputFotoGal, 'Añadir foto de la galería')));
+    }
+  }
 
   // Color
   // Muestra del color: al tocarla se ve a pantalla completa para compararla con la prenda
@@ -182,14 +246,19 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   // Rueda de color fina («Ajuste avanzado»)
   const inputColor = h('input', { type: 'color', 'aria-label': 'Ajuste avanzado del color' });
   inputColor.addEventListener('input', () => { quitarMarcas(); ponerColor(describirColor(inputColor.value)); });
-  const btnAuto = h('button', { class: 'btn', type: 'button', onclick: () => { quitarMarcas(); ponerColor(st.colorAuto, { auto: true }); } }, 'Automático');
+  // «Automático» solo tiene sentido si el color salió de la foto
+  const btnAuto = blob
+    ? h('button', { class: 'btn', type: 'button', onclick: () => { quitarMarcas(); ponerColor(st.colorAuto, { auto: true }); } }, 'Automático')
+    : null;
 
   // Paleta de muestras por familias (de claro a oscuro)
   const paleta = crearPaleta({ onElegir: (t) => { quitarMarcas(); ponerColor(describirColor(t)); } });
-  const panelPaleta = h('div', { class: 'paleta-panel', hidden: true },
+  // Al crear un básico la paleta se abre directamente (es la forma principal de elegir el color)
+  const paletaAbierta = !!basico && modo === 'nuevo';
+  const panelPaleta = h('div', { class: 'paleta-panel', hidden: !paletaAbierta },
     paleta.el,
     h('label', { class: 'btn mini avanzado' }, 'Ajuste avanzado', inputColor));
-  const btnPaleta = h('button', { class: 'btn', type: 'button', 'aria-expanded': 'false' }, 'Paleta');
+  const btnPaleta = h('button', { class: 'btn', type: 'button', 'aria-expanded': String(paletaAbierta) }, 'Paleta');
   btnPaleta.addEventListener('click', () => {
     panelPaleta.hidden = !panelPaleta.hidden;
     btnPaleta.setAttribute('aria-expanded', String(!panelPaleta.hidden));
@@ -267,7 +336,7 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
 
   let editorEst = null; // se crea más abajo (necesita el color inicial)
   // La muestra enseña el estampado dibujado si la prenda no es lisa
-  const pintarMuestra = () => { swatch.style.background = fondoEstampado(st.color.hex, st.estampado); };
+  const pintarMuestra = () => { swatch.style.background = fondoEstampado(st.color.hex, st.estampado); pintarIlustracion(); };
 
   function ponerColor(c, { desdeTeclado = false, auto = false } = {}) {
     st.color = { hex: c.hex, nombre: c.nombre };
@@ -393,7 +462,11 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
     if (!st.estilos.size) { toast('Marca al menos un estilo'); return; }
     btnGuardar.disabled = true;
     try {
-      await onGuardar({ categoria: st.categoria, color: st.color, estampado: normalizarEstampado(st.estampado), estilos: [...st.estilos], etiqueta: datosEtiqueta() });
+      await onGuardar({
+        categoria: st.categoria, color: st.color, estampado: normalizarEstampado(st.estampado),
+        estilos: [...st.estilos], etiqueta: datosEtiqueta(), nombre: st.nombre.trim() || null,
+        ...(st.fotoNueva ? { foto: st.foto } : {}),
+      });
       destruir();
     } catch (e) {
       console.error(e);
@@ -405,8 +478,13 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
     h('button', { class: 'btn', type: 'button', onclick: () => { destruir(); onCancelar && onCancelar(); } }, 'Cancelar'),
     onBorrar ? h('button', { class: 'btn danger', type: 'button', onclick: () => onBorrar(destruir) }, 'Borrar prenda') : null);
 
+  // Nombre (opcional; los básicos lo traen relleno)
+  const campoNombre = h('input', { type: 'text', value: st.nombre, placeholder: 'Ej. Camisa oxford', autocomplete: 'off', 'aria-label': 'Nombre de la prenda' });
+  campoNombre.addEventListener('input', () => { st.nombre = campoNombre.value; });
+
+  montarZonaFoto();
   const el = h('div', { class: 'editor' },
-    wrap,
+    zonaFoto,
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Color de base'),
       h('div', { class: 'color-row' }, swatch, h('div', { class: 'color-info' }, nombre,
@@ -420,7 +498,8 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
       editorEst.el),
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Categoría'),
-      select, aiEstado),
+      select, aiEstado,
+      h('label', { class: 'field wide nombre-prenda' }, h('span', {}, 'Nombre (opcional)'), campoNombre)),
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Estilo'),
       chipsEstilo),
@@ -434,7 +513,7 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   function destruir() {
     if (st.cerrado) return;
     st.cerrado = true;
-    URL.revokeObjectURL(fotoURL);
+    if (fotoURL) URL.revokeObjectURL(fotoURL);
     liberarOtra();
   }
 
@@ -531,14 +610,63 @@ async function alElegirFoto(e) {
     });
 }
 
+/* ================= AÑADIR BÁSICO (SIN FOTO) ================= */
+function mostrarCatalogoBasicos() {
+  reiniciarAnadir();
+  $('#anadir-inicio').hidden = true;
+  $('#anadir-editor').replaceChildren(
+    h('div', { class: 'catalogo-cab' },
+      h('h2', { class: 'section-title' }, 'Elige un básico'),
+      h('button', { class: 'link-btn', type: 'button', onclick: reiniciarAnadir }, 'Volver')),
+    h('p', { class: 'muted small' }, 'Después eliges su color y, si quieres, el estampado.'),
+    ...GRUPOS_BASICOS.map((g) => h('section', { class: 'catalogo-grupo' },
+      h('h3', { class: 'sub-title' }, g.nombre),
+      h('div', { class: 'catalogo' }, ...g.basicos.map((b) =>
+        h('button', { class: 'basico-card', type: 'button', onclick: () => editarBasicoNuevo(b) },
+          h('span', { class: 'basico-mini', html: svgPrenda(b.icono, b.color, null, { fondo: false }) }),
+          h('span', { class: 'basico-nombre' }, b.nombre)))))));
+  window.scrollTo(0, 0);
+}
+
+function editarBasicoNuevo(b) {
+  const host = $('#anadir-editor');
+  const volver = () => { if (editorNuevo) editorNuevo.destruir(); editorNuevo = null; mostrarCatalogoBasicos(); };
+  const ed = crearEditor({
+    basico: { id: b.id, icono: b.icono },
+    nombrePrenda: b.nombre,
+    color: describirColor(b.color),
+    categoria: b.categoria,
+    estilos: b.estilos,
+    modo: 'nuevo',
+    onGuardar: async (datos) => {
+      await db.put('prendas', { id: db.uid(), foto: null, basico: { id: b.id, icono: b.icono }, ...datos, creada: Date.now() });
+      await recargarDatos();
+      toast('Prenda guardada');
+      editorNuevo = null;
+      reiniciarAnadir();
+      location.hash = '#armario';
+    },
+    onCancelar: volver,
+  });
+  editorNuevo = ed;
+  host.replaceChildren(
+    h('button', { class: 'link-btn volver-catalogo', type: 'button', onclick: volver }, '← Elegir otro básico'),
+    ed.el);
+  window.scrollTo(0, 0);
+}
+
 /* ================= EDITAR ================= */
 async function abrirEdicion(prenda) {
   const dlg = $('#dlg-editar');
-  let canvas;
-  try { canvas = await blobToCanvas(prenda.foto, 800); } catch { toast('No se pudo abrir la foto'); return; }
+  let canvas = null;
+  if (prenda.foto) {
+    try { canvas = await blobToCanvas(prenda.foto, 800); } catch { toast('No se pudo abrir la foto'); return; }
+  }
   const cerrar = () => { ed.destruir(); dlg.close(); };
   const ed = crearEditor({
-    blob: prenda.foto, canvas, modo: 'editar',
+    blob: prenda.foto || null, canvas, modo: 'editar',
+    basico: prenda.basico || null,
+    nombrePrenda: prenda.nombre || '',
     color: prenda.color || { hex: '#cccccc', nombre: 'gris claro' },
     categoria: prenda.categoria,
     estilos: prenda.estilos || [],
@@ -695,6 +823,7 @@ async function iniciar() {
   window.addEventListener('hashchange', ruta);
   $('#input-camara').addEventListener('change', alElegirFoto);
   $('#input-galeria').addEventListener('change', alElegirFoto);
+  $('#btn-basico').addEventListener('click', mostrarCatalogoBasicos);
   const swFondo = $('#fondo-blanco');
   swFondo.checked = leerPref('fondoBlanco', 'true') === 'true';
   swFondo.addEventListener('change', () => guardarPref('fondoBlanco', String(swFondo.checked)));

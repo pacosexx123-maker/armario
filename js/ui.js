@@ -64,5 +64,89 @@ export function mostrarColorGrande(hex, nombre = '') {
   dlg.showModal();
 }
 
+// Foto a pantalla completa con zoom de dos dedos (solo la foto; la app no se puede ampliar).
+// Gestos: pellizcar para ampliar, arrastrar para moverse, doble toque para acercar/alejar.
+export function mostrarFotoGrande(src, alt = 'Foto') {
+  const img = h('img', { src, alt, draggable: 'false', class: 'visor-img' });
+  const zona = h('div', { class: 'visor-zona' }, img);
+  const cerrar = h('button', { class: 'icon-btn visor-cerrar', type: 'button', 'aria-label': 'Cerrar', html: ICONOS.cerrar });
+  const dlg = h('dialog', { class: 'visor', 'aria-label': alt }, zona, cerrar,
+    h('p', { class: 'visor-ayuda' }, 'Pellizca con dos dedos para ampliar · doble toque para acercar'));
+
+  let s = 1, tx = 0, ty = 0;               // escala y desplazamiento (respecto a la caja de la foto)
+  let caja = null;                          // posición y tamaño de la foto sin zoom
+  const punteros = new Map();
+  let gesto = null, ultimoToque = 0, movido = false;
+
+  const medir = () => { const t = img.style.transform; img.style.transform = 'none'; caja = img.getBoundingClientRect(); img.style.transform = t; };
+  const limitar = () => {
+    s = Math.min(6, Math.max(1, s));
+    tx = Math.min(0, Math.max(caja.width * (1 - s), tx));
+    ty = Math.min(0, Math.max(caja.height * (1 - s), ty));
+  };
+  const aplicar = () => { img.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`; };
+  // Ampliar manteniendo fijo el punto (px, py) de la pantalla
+  const zoomEn = (px, py, nuevaS, base = { s, tx, ty }) => {
+    const lx = (px - caja.left - base.tx) / base.s, ly = (py - caja.top - base.ty) / base.s;
+    s = nuevaS; tx = px - caja.left - s * lx; ty = py - caja.top - s * ly;
+    limitar(); aplicar();
+  };
+  const empezar = () => {
+    const ps = [...punteros.values()];
+    gesto = { s, tx, ty, ps: ps.map((p) => ({ ...p })) };
+    if (ps.length === 2) {
+      gesto.d = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1;
+      gesto.c = { x: (ps[0].x + ps[1].x) / 2, y: (ps[0].y + ps[1].y) / 2 };
+    }
+  };
+
+  zona.addEventListener('pointerdown', (e) => {
+    if (!caja) medir();
+    try { zona.setPointerCapture(e.pointerId); } catch { /* puntero ya liberado */ }
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    movido = false;
+    empezar();
+  });
+  zona.addEventListener('pointermove', (e) => {
+    if (!punteros.has(e.pointerId)) return;
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const ps = [...punteros.values()];
+    if (ps.length === 2 && gesto.d) {
+      const d = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y);
+      const c = { x: (ps[0].x + ps[1].x) / 2, y: (ps[0].y + ps[1].y) / 2 };
+      // escala alrededor del centro inicial + desplazamiento del centro
+      zoomEn(gesto.c.x, gesto.c.y, gesto.s * (d / gesto.d), gesto);
+      tx += c.x - gesto.c.x; ty += c.y - gesto.c.y; limitar(); aplicar();
+      movido = true;
+    } else if (ps.length === 1 && gesto.ps.length === 1) {
+      const dx = ps[0].x - gesto.ps[0].x, dy = ps[0].y - gesto.ps[0].y;
+      if (Math.abs(dx) + Math.abs(dy) > 6) movido = true;
+      if (s > 1) { tx = gesto.tx + dx; ty = gesto.ty + dy; limitar(); aplicar(); }
+    }
+  });
+  const soltar = (e) => {
+    if (!punteros.has(e.pointerId)) return;
+    const eraUno = punteros.size === 1;
+    punteros.delete(e.pointerId);
+    if (eraUno && !movido) {
+      const ahora = Date.now();
+      if (ahora - ultimoToque < 320) { zoomEn(e.clientX, e.clientY, s > 1.05 ? 1 : 2.5); ultimoToque = 0; }
+      else ultimoToque = ahora;
+    }
+    empezar();
+  };
+  zona.addEventListener('pointerup', soltar);
+  zona.addEventListener('pointercancel', soltar);
+  img.addEventListener('load', medir);
+  window.addEventListener('resize', medir);
+
+  cerrar.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => { window.removeEventListener('resize', medir); dlg.remove(); });
+  document.body.append(dlg);
+  dlg.showModal();
+  if (img.complete) medir();
+  return dlg;
+}
+
 export function leerPref(k, def) { try { return localStorage.getItem(k) ?? def; } catch { return def; } }
 export function guardarPref(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } }

@@ -1,7 +1,7 @@
 // Pestaña «Inspiración»: looks de referencia adaptados a mi armario.
 
 import * as db from './db.js';
-import { $, h, toast, chip, botonIcono, leerPref, guardarPref } from './ui.js';
+import { $, h, toast, chip, botonIcono, leerPref, guardarPref, mostrarFotoGrande } from './ui.js';
 import { adaptarLook, describirHueco } from './matching.js';
 import { ilustrarLook, iconoPrenda } from './illustration.js';
 import { nombreCategoria } from './categories.js';
@@ -126,7 +126,9 @@ function pintarDetalle() {
   const referencia = h('figure', { class: 'cmp-col' },
     h('figcaption', {}, 'Referencia'),
     foto
-      ? h('div', { class: 'cmp-ref foto' }, h('img', { src: foto, alt: 'Foto del look' }))
+      ? h('button', { class: 'cmp-ref foto', type: 'button', 'aria-label': 'Ver la foto del look a pantalla completa', onclick: () => mostrarFotoGrande(foto, look.nombre) },
+        h('img', { src: foto, alt: 'Foto del look' }),
+        h('span', { class: 'foto-ampliar', 'aria-hidden': 'true', html: '<svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>' }))
       : h('div', { class: 'cmp-ref', html: ilustrarLook(look.huecos, { titulo: look.nombre }) }));
 
   const elegidas = res.huecos.filter((r) => r.prenda);
