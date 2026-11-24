@@ -28,13 +28,26 @@ export const DISPONIBLES = [
 
 // PRUEBA: básicos que ya usan la imagen realista. Para activarla en todos, cambia esta lista por
 // `DISPONIBLES` (o añade ids). El resto sigue con su ilustración SVG.
-export const REALISTAS_ACTIVOS = ['camisa-oxford', 'camisa-oxford-m', 'chino', 'chino-m', 'jersey-redondo'];
+export const REALISTAS_ACTIVOS = DISPONIBLES; // activadas para todos los básicos con foto
 
 // Prendas con foto: si su tipo confirmado es uno de estos, se muestra con la imagen realista
 const REALISTA_POR_CATEGORIA = {
   camisa: { hombre: 'camisa-oxford', mujer: 'camisa-oxford-m' },
   pantalon: { hombre: 'chino', mujer: 'chino-m' },
   jersey: { hombre: 'jersey-redondo', mujer: 'jersey-redondo' },
+  camiseta: { hombre: 'camiseta-basica', mujer: 'camiseta-basica' },
+  sudadera: { hombre: 'sudadera', mujer: 'sudadera' },
+  chaqueta: { hombre: 'americana', mujer: 'americana-m' },
+  abrigo: { hombre: 'abrigo-largo', mujer: 'abrigo-largo' },
+  vaqueros: { hombre: 'vaqueros-rectos', mujer: 'vaqueros-rectos' },
+  chandal: { hombre: 'chandal', mujer: 'chandal' },
+  falda: { hombre: 'falda', mujer: 'falda' },
+  shorts: { hombre: 'shorts', mujer: 'shorts' },
+  vestido: { hombre: 'vestido', mujer: 'vestido' },
+  zapatillas: { hombre: 'sneakers', mujer: 'sneakers' },
+  zapatos: { hombre: 'zapatos-vestir', mujer: 'mocasines' },
+  botas: { hombre: 'botas', mujer: 'botas' },
+  sandalias: { hombre: 'sandalias', mujer: 'sandalias' },
 };
 
 const CALZADO = new Set(['sneakers', 'mocasines', 'zapatos-vestir', 'botas', 'botines', 'bailarinas', 'salones', 'sandalias']);
