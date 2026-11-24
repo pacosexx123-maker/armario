@@ -1,0 +1,543 @@
+// Armario · lógica de la interfaz
+import * as db from './db.js';
+import { processPhoto, blobToCanvas } from './image.js';
+import { extraerColorDominante, colorEnPunto, describirColor, NOMBRES_COLOR, colorDeNombre } from './color.js';
+import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categories.js';
+import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
+import { exportar, importar } from './backup.js';
+
+const $ = (sel, root = document) => root.querySelector(sel);
+
+function h(tag, attrs = {}, ...hijos) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'html') el.innerHTML = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of hijos.flat()) if (c != null && c !== false) el.append(c instanceof Node ? c : document.createTextNode(c));
+  return el;
+}
+
+const ICONOS = {
+  corazon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>',
+  otro: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>',
+  papelera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+  cerrar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+};
+
+/* ---------- Estado ---------- */
+const estado = {
+  prendas: [],
+  favoritos: [],
+  filtroCat: null,
+  filtroColor: null,
+  estiloOutfit: leerPref('estiloOutfit', 'informal'),
+  incluirAbrigo: leerPref('incluirAbrigo', 'false') === 'true',
+  outfitActual: null,
+};
+const urls = new Map(); // id de prenda → URL de su foto
+
+function leerPref(k, def) { try { return localStorage.getItem(k) ?? def; } catch { return def; } }
+function guardarPref(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } }
+
+function urlFoto(p) {
+  if (!urls.has(p.id)) urls.set(p.id, URL.createObjectURL(p.foto));
+  return urls.get(p.id);
+}
+function liberarFoto(id) {
+  if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+async function recargarDatos() {
+  const [prendas, favoritos] = await Promise.all([db.getAll('prendas'), db.getAll('outfits')]);
+  estado.prendas = prendas.sort((a, b) => (b.creada || 0) - (a.creada || 0));
+  estado.favoritos = favoritos.sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
+  const ids = new Set(prendas.map((p) => p.id));
+  [...urls.keys()].forEach((id) => { if (!ids.has(id)) liberarFoto(id); });
+}
+
+/* ---------- Navegación ---------- */
+const VISTAS = {
+  armario: { titulo: 'Mi armario', render: renderArmario },
+  anadir: { titulo: 'Añadir prenda', render: () => {} },
+  outfits: { titulo: 'Outfits', render: renderOutfits },
+};
+
+function ruta() {
+  const nombre = (location.hash || '#armario').slice(1);
+  const vista = VISTAS[nombre] ? nombre : 'armario';
+  for (const k of Object.keys(VISTAS)) $(`#view-${k}`).hidden = k !== vista;
+  document.querySelectorAll('.tabbar a').forEach((a) => {
+    if (a.dataset.tab === vista) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+  $('#page-title').textContent = VISTAS[vista].titulo;
+  VISTAS[vista].render();
+  window.scrollTo(0, 0);
+}
+
+/* ================= ARMARIO ================= */
+function renderArmario() {
+  const grid = $('#grid');
+  const vacio = $('#armario-vacio');
+  const { prendas } = estado;
+  vacio.hidden = prendas.length > 0;
+  $('.filters').hidden = prendas.length === 0;
+  $('#contador').hidden = prendas.length === 0;
+
+  // Filtros de categoría (solo las que existen)
+  const cats = CATEGORIAS.filter((c) => prendas.some((p) => p.categoria === c.id));
+  if (estado.filtroCat && !cats.some((c) => c.id === estado.filtroCat)) estado.filtroCat = null;
+  $('#filtro-categorias').replaceChildren(
+    chip('Todas', !estado.filtroCat, () => { estado.filtroCat = null; renderArmario(); }),
+    ...cats.map((c) => chip(c.nombre, estado.filtroCat === c.id, () => { estado.filtroCat = estado.filtroCat === c.id ? null : c.id; renderArmario(); }))
+  );
+
+  // Filtros de color (por nombre de color)
+  const colores = NOMBRES_COLOR.filter((n) => prendas.some((p) => p.color && p.color.nombre === n));
+  if (estado.filtroColor && !colores.includes(estado.filtroColor)) estado.filtroColor = null;
+  $('#filtro-colores').replaceChildren(
+    chip('Todos los colores', !estado.filtroColor, () => { estado.filtroColor = null; renderArmario(); }),
+    ...colores.map((n) => chip(n, estado.filtroColor === n, () => { estado.filtroColor = estado.filtroColor === n ? null : n; renderArmario(); }, colorDeNombre(n).hex))
+  );
+
+  const visibles = prendas.filter((p) =>
+    (!estado.filtroCat || p.categoria === estado.filtroCat) &&
+    (!estado.filtroColor || (p.color && p.color.nombre === estado.filtroColor)));
+  $('#contador').textContent = visibles.length === prendas.length
+    ? `${prendas.length} ${prendas.length === 1 ? 'prenda' : 'prendas'}`
+    : `${visibles.length} de ${prendas.length} prendas`;
+
+  grid.replaceChildren(...visibles.map((p) =>
+    h('button', { class: 'item', type: 'button', onclick: () => abrirEdicion(p), 'aria-label': `Editar ${nombreCategoria(p.categoria)} ${p.color?.nombre || ''}` },
+      h('img', { src: urlFoto(p), alt: '', loading: 'lazy', decoding: 'async' }),
+      h('div', { class: 'meta' },
+        h('span', { class: 'dot', style: { background: p.color?.hex || '#ccc' } }),
+        h('span', { class: 'name' }, nombreCategoria(p.categoria)),
+        h('span', { class: 'sub' }, p.color?.nombre || ''))
+    )));
+}
+
+function chip(texto, activo, onclick, colorDot) {
+  return h('button', { class: 'chip', type: 'button', 'aria-pressed': String(!!activo), onclick },
+    colorDot ? h('span', { class: 'dot', style: { background: colorDot } }) : null, texto);
+}
+
+/* ================= EDITOR DE PRENDA ================= */
+// Se usa tanto para añadir como para editar.
+function crearEditor({ blob, canvas, color, categoria = '', estilos = [], modo, onGuardar, onCancelar, onBorrar }) {
+  const st = {
+    color: { ...color },
+    colorAuto: { ...color },
+    categoria,
+    estilos: new Set(estilos),
+    estilosTocados: modo === 'editar',
+    categoriaTocada: modo === 'editar',
+    cerrado: false,
+  };
+  const fotoURL = URL.createObjectURL(blob);
+
+  // Foto (tocar para elegir color)
+  const marca = h('div', { class: 'picker-mark', hidden: true });
+  const img = h('img', { src: fotoURL, alt: 'Foto de la prenda', draggable: 'false' });
+  const wrap = h('div', { class: 'photo-wrap' }, img, marca,
+    h('div', { class: 'photo-hint' }, 'Toca la foto para tomar el color de ese punto'));
+  img.addEventListener('click', (e) => {
+    const r = img.getBoundingClientRect();
+    const esc = Math.min(r.width / canvas.width, r.height / canvas.height);
+    const offX = (r.width - canvas.width * esc) / 2, offY = (r.height - canvas.height * esc) / 2;
+    const x = (e.clientX - r.left - offX) / esc, y = (e.clientY - r.top - offY) / esc;
+    if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return;
+    const c = colorEnPunto(canvas, x, y, Math.max(3, Math.round(canvas.width / 120)));
+    const wr = wrap.getBoundingClientRect();
+    marca.style.left = `${e.clientX - wr.left}px`;
+    marca.style.top = `${e.clientY - wr.top}px`;
+    marca.style.background = c.hex;
+    marca.hidden = false;
+    ponerColor(c);
+  });
+
+  // Color
+  const swatch = h('div', { class: 'swatch' });
+  const nombre = h('div', { class: 'color-name' });
+  const hex = h('div', { class: 'color-hex' });
+  const inputColor = h('input', { type: 'color', 'aria-label': 'Ajustar color a mano' });
+  inputColor.addEventListener('input', () => { marca.hidden = true; ponerColor(describirColor(inputColor.value)); });
+  const btnAuto = h('button', { class: 'btn', type: 'button', onclick: () => { marca.hidden = true; ponerColor(st.colorAuto); } }, 'Automático');
+  function ponerColor(c) {
+    st.color = { hex: c.hex, nombre: c.nombre };
+    swatch.style.background = c.hex;
+    nombre.textContent = c.nombre;
+    hex.textContent = c.hex.toUpperCase();
+    inputColor.value = c.hex;
+  }
+  ponerColor(st.color);
+
+  // Categoría
+  const select = h('select', { 'aria-label': 'Categoría' },
+    h('option', { value: '', disabled: true }, 'Elige una categoría…'),
+    ...CATEGORIAS.map((c) => h('option', { value: c.id }, c.nombre)));
+  select.value = st.categoria || '';
+  const aiEstado = h('div', { class: 'ai-status' });
+  select.addEventListener('change', () => {
+    st.categoria = select.value;
+    st.categoriaTocada = true;
+    select.classList.remove('needs-choice');
+    if (!st.estilosTocados) { st.estilos = new Set(estilosPorDefecto(st.categoria)); pintarEstilos(); }
+  });
+
+  // Estilos
+  const chipsEstilo = h('div', { class: 'chips' });
+  function pintarEstilos() {
+    chipsEstilo.replaceChildren(...ESTILOS.map((e) => chip(e.nombre, st.estilos.has(e.id), () => {
+      st.estilosTocados = true;
+      st.estilos.has(e.id) ? st.estilos.delete(e.id) : st.estilos.add(e.id);
+      pintarEstilos();
+    })));
+  }
+  pintarEstilos();
+
+  // Acciones
+  const btnGuardar = h('button', { class: 'btn primary', type: 'button' }, modo === 'editar' ? 'Guardar cambios' : 'Guardar prenda');
+  btnGuardar.addEventListener('click', async () => {
+    if (!st.categoria) { select.classList.add('needs-choice'); select.focus(); toast('Elige la categoría de la prenda'); return; }
+    if (!st.estilos.size) { toast('Marca al menos un estilo'); return; }
+    btnGuardar.disabled = true;
+    try {
+      await onGuardar({ categoria: st.categoria, color: st.color, estilos: [...st.estilos] });
+      destruir();
+    } catch (e) {
+      console.error(e);
+      toast('No se pudo guardar: ' + e.message);
+      btnGuardar.disabled = false;
+    }
+  });
+  const acciones = h('div', { class: 'editor-actions' }, btnGuardar,
+    h('button', { class: 'btn', type: 'button', onclick: () => { destruir(); onCancelar && onCancelar(); } }, 'Cancelar'),
+    onBorrar ? h('button', { class: 'btn danger', type: 'button', onclick: () => onBorrar(destruir) }, 'Borrar prenda') : null);
+
+  const el = h('div', { class: 'editor' },
+    wrap,
+    h('div', { class: 'card' },
+      h('p', { class: 'field-label' }, 'Color'),
+      h('div', { class: 'color-row' }, swatch, h('div', { class: 'color-info' }, nombre, hex)),
+      h('div', { class: 'color-actions' },
+        h('label', { class: 'btn' }, 'Ajustar a mano', inputColor),
+        btnAuto)),
+    h('div', { class: 'card' },
+      h('p', { class: 'field-label' }, 'Categoría'),
+      select, aiEstado),
+    h('div', { class: 'card' },
+      h('p', { class: 'field-label' }, 'Estilo'),
+      chipsEstilo),
+    acciones);
+
+  function destruir() {
+    if (st.cerrado) return;
+    st.cerrado = true;
+    URL.revokeObjectURL(fotoURL);
+  }
+
+  function setEstado(tipo, texto) {
+    if (st.cerrado) return;
+    aiEstado.className = 'ai-status' + (tipo === 'warn' ? ' warn' : '');
+    aiEstado.replaceChildren(...(tipo === 'cargando' ? [h('span', { class: 'spinner' })] : []), texto || '');
+  }
+
+  function setClasificacion(res) {
+    if (st.cerrado) return;
+    if (st.categoriaTocada) { setEstado('ok', res.categoria ? `La app sugería: ${nombreCategoria(res.categoria)}.` : ''); return; }
+    if (res.segura) {
+      st.categoria = res.categoria;
+      select.value = res.categoria;
+      if (!st.estilosTocados) { st.estilos = new Set(estilosPorDefecto(res.categoria)); pintarEstilos(); }
+      setEstado('ok', `Sugerido: ${nombreCategoria(res.categoria)} (${Math.round(res.confianza * 100)} % de confianza). Puedes cambiarlo.`);
+    } else {
+      select.value = '';
+      select.classList.add('needs-choice');
+      const pista = res.categoria ? ` ¿Quizá ${nombreCategoria(res.categoria).toLowerCase()}?` : '';
+      setEstado('warn', `No estoy seguro de qué prenda es.${pista} Elige la categoría.`);
+    }
+  }
+
+  return { el, setEstado, setClasificacion, destruir, get cerrado() { return st.cerrado; } };
+}
+
+/* ================= AÑADIR ================= */
+let editorNuevo = null;
+
+function reiniciarAnadir() {
+  if (editorNuevo) editorNuevo.destruir();
+  editorNuevo = null;
+  $('#anadir-editor').replaceChildren();
+  $('#anadir-inicio').hidden = false;
+}
+
+async function alElegirFoto(e) {
+  const input = e.target;
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  reiniciarAnadir();
+  $('#anadir-inicio').hidden = true;
+  const host = $('#anadir-editor');
+  host.replaceChildren(h('div', { class: 'card' }, h('div', { class: 'ai-status' }, h('span', { class: 'spinner' }), 'Preparando la foto…')));
+
+  let canvas, blob, color;
+  try {
+    ({ canvas, blob } = await processPhoto(file));
+    color = extraerColorDominante(canvas);
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo procesar la foto');
+    reiniciarAnadir();
+    return;
+  }
+
+  const ed = crearEditor({
+    blob, canvas, color, modo: 'nuevo',
+    onGuardar: async (datos) => {
+      await db.put('prendas', { id: db.uid(), foto: blob, ...datos, creada: Date.now() });
+      await recargarDatos();
+      toast('Prenda guardada');
+      editorNuevo = null;
+      reiniciarAnadir();
+      location.hash = '#armario';
+    },
+    onCancelar: () => { editorNuevo = null; reiniciarAnadir(); },
+  });
+  editorNuevo = ed;
+  host.replaceChildren(ed.el);
+
+  // Clasificación automática (no bloquea: se puede elegir la categoría mientras tanto)
+  ed.setEstado('cargando', 'Cargando el clasificador…');
+  import('./classifier.js')
+    .then(({ clasificar }) => clasificar(canvas, (msg) => ed.setEstado('cargando', msg)))
+    .then((res) => ed.setClasificacion(res))
+    .catch((err) => {
+      console.warn(err);
+      ed.setEstado('warn', 'No se pudo clasificar automáticamente (¿sin conexión la primera vez?). Elige la categoría.');
+    });
+}
+
+/* ================= EDITAR ================= */
+async function abrirEdicion(prenda) {
+  const dlg = $('#dlg-editar');
+  let canvas;
+  try { canvas = await blobToCanvas(prenda.foto, 800); } catch { toast('No se pudo abrir la foto'); return; }
+  const cerrar = () => { ed.destruir(); dlg.close(); };
+  const ed = crearEditor({
+    blob: prenda.foto, canvas, modo: 'editar',
+    color: prenda.color || { hex: '#cccccc', nombre: 'gris claro' },
+    categoria: prenda.categoria,
+    estilos: prenda.estilos || [],
+    onGuardar: async (datos) => {
+      await db.put('prendas', { ...prenda, ...datos, actualizada: Date.now() });
+      await recargarDatos();
+      dlg.close();
+      toast('Cambios guardados');
+      renderArmario();
+    },
+    onCancelar: () => dlg.close(),
+    onBorrar: async (destruir) => {
+      if (!confirm('¿Borrar esta prenda? No se puede deshacer.')) return;
+      await db.remove('prendas', prenda.id);
+      liberarFoto(prenda.id);
+      await recargarDatos();
+      destruir();
+      dlg.close();
+      toast('Prenda borrada');
+      if (estado.outfitActual && estado.outfitActual.prendas.some((p) => p.id === prenda.id)) estado.outfitActual = null;
+      renderArmario();
+    },
+  });
+  dlg.replaceChildren(
+    h('div', { class: 'sheet-head' },
+      h('h2', {}, 'Editar prenda'),
+      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', html: ICONOS.cerrar, onclick: cerrar })),
+    ed.el);
+  dlg.onclose = () => ed.destruir();
+  dlg.showModal();
+  dlg.scrollTop = 0;
+}
+
+/* ================= OUTFITS ================= */
+function renderOutfits() {
+  document.querySelectorAll('#selector-estilo button').forEach((b) =>
+    b.setAttribute('aria-checked', String(b.dataset.estilo === estado.estiloOutfit)));
+  $('#incluir-abrigo').checked = estado.incluirAbrigo;
+  pintarOutfit();
+  pintarFavoritos();
+}
+
+function generar(evitarActual = false) {
+  if (!estado.prendas.length) {
+    estado.outfitActual = { error: 'Primero añade algunas prendas a tu armario.' };
+  } else {
+    estado.outfitActual = generarOutfit(estado.prendas, estado.estiloOutfit, {
+      incluirAbrigo: estado.incluirAbrigo,
+      evitar: evitarActual && estado.outfitActual ? estado.outfitActual.clave : null,
+    });
+  }
+  pintarOutfit();
+}
+
+function favoritoDe(clave) { return estado.favoritos.find((f) => claveOutfit(f.ids) === clave); }
+
+function pintarOutfit() {
+  const host = $('#outfit-resultado');
+  const o = estado.outfitActual;
+  if (!o) { host.replaceChildren(); return; }
+  if (o.error) { host.replaceChildren(h('div', { class: 'notice' }, o.error)); return; }
+
+  const fav = favoritoDe(o.clave);
+  const btnFav = h('button', { class: 'btn fav', type: 'button', 'aria-pressed': String(!!fav), html: ICONOS.corazon });
+  btnFav.append(fav ? 'Guardado' : 'Guardar');
+  btnFav.addEventListener('click', () => alternarFavorito(o));
+  const btnOtro = h('button', { class: 'btn primary', type: 'button', html: ICONOS.otro, onclick: () => generar(true) });
+  btnOtro.append('Otro');
+
+  host.replaceChildren(h('div', { class: 'card outfit' },
+    h('div', { class: `outfit-pieces n${o.prendas.length}` },
+      ...o.prendas.map((p) => h('div', { class: 'piece' },
+        h('img', { src: urlFoto(p), alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
+        h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: p.color.hex } }), nombreCategoria(p.categoria))))),
+    h('p', { class: 'outfit-why' }, o.frase),
+    h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: p.color.hex }, title: p.color.nombre }))),
+    o.aviso ? h('p', { class: 'muted small' }, o.aviso) : null,
+    h('div', { class: 'outfit-actions' }, btnFav, btnOtro)));
+}
+
+async function alternarFavorito(o) {
+  const fav = favoritoDe(o.clave);
+  if (fav) {
+    await db.remove('outfits', fav.id);
+    toast('Quitado de favoritos');
+  } else {
+    await db.put('outfits', { id: db.uid(), ids: o.prendas.map((p) => p.id), estilo: o.estilo, frase: o.frase, fecha: Date.now() });
+    toast('Guardado en favoritos');
+  }
+  await recargarDatos();
+  pintarOutfit();
+  pintarFavoritos();
+}
+
+function pintarFavoritos() {
+  const host = $('#favoritos');
+  if (!estado.favoritos.length) {
+    host.replaceChildren(h('p', { class: 'muted' }, 'Aún no tienes outfits guardados. Genera uno y pulsa «Guardar».'));
+    return;
+  }
+  const porId = new Map(estado.prendas.map((p) => [p.id, p]));
+  host.replaceChildren(...estado.favoritos.map((f) => {
+    const prendas = f.ids.map((id) => porId.get(id)).filter(Boolean);
+    const incompleto = prendas.length < f.ids.length;
+    const fecha = new Date(f.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const borrar = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Quitar de favoritos', html: ICONOS.papelera });
+    borrar.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await db.remove('outfits', f.id);
+      await recargarDatos();
+      pintarFavoritos();
+      pintarOutfit();
+    });
+    const fila = h('div', { class: 'fav-row', role: 'button', tabindex: '0' },
+      h('div', { class: 'fav-thumbs' }, ...prendas.map((p) => h('img', { src: urlFoto(p), alt: '' }))),
+      h('div', { class: 'fav-text' },
+        h('strong', {}, `${ESTILOS_OUTFIT[f.estilo]?.nombre || ''} · ${fecha}`),
+        h('span', {}, incompleto ? 'Alguna prenda ya no está en tu armario' : f.frase)),
+      borrar);
+    const ver = () => {
+      if (!prendas.length) return;
+      estado.outfitActual = { prendas, clave: claveOutfit(f.ids), estilo: f.estilo, frase: f.frase, aviso: incompleto ? 'Alguna prenda de este outfit se ha borrado.' : '' };
+      pintarOutfit();
+      $('#outfit-resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    fila.addEventListener('click', ver);
+    fila.addEventListener('keydown', (e) => { if (e.key === 'Enter') ver(); });
+    return fila;
+  }));
+}
+
+/* ================= COPIA DE SEGURIDAD ================= */
+async function abrirAjustes() {
+  const dlg = $('#dlg-ajustes');
+  let info = `${estado.prendas.length} prendas · ${estado.favoritos.length} outfits favoritos`;
+  try {
+    const est = await navigator.storage.estimate();
+    info += ` · ${(est.usage / 1048576).toFixed(1)} MB usados`;
+  } catch { /* sin soporte */ }
+  $('#info-almacen').textContent = info;
+  dlg.showModal();
+}
+
+/* ================= INICIO ================= */
+function cerrarAlTocarFondo(dlg) {
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
+
+async function iniciar() {
+  window.addEventListener('hashchange', ruta);
+  $('#input-camara').addEventListener('change', alElegirFoto);
+  $('#input-galeria').addEventListener('change', alElegirFoto);
+
+  document.querySelectorAll('#selector-estilo button').forEach((b) => b.addEventListener('click', () => {
+    estado.estiloOutfit = b.dataset.estilo;
+    guardarPref('estiloOutfit', estado.estiloOutfit);
+    renderOutfits();
+    if (estado.outfitActual) generar();
+  }));
+  $('#incluir-abrigo').addEventListener('change', (e) => {
+    estado.incluirAbrigo = e.target.checked;
+    guardarPref('incluirAbrigo', String(estado.incluirAbrigo));
+    if (estado.outfitActual) generar();
+  });
+  $('#btn-generar').addEventListener('click', () => generar(true));
+
+  $('#btn-ajustes').addEventListener('click', abrirAjustes);
+  document.querySelectorAll('dialog [data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+  cerrarAlTocarFondo($('#dlg-editar'));
+  cerrarAlTocarFondo($('#dlg-ajustes'));
+
+  $('#btn-exportar').addEventListener('click', async () => {
+    try {
+      const r = await exportar();
+      toast(`Exportadas ${r.prendas} prendas`);
+    } catch (e) { console.error(e); toast('No se pudo exportar'); }
+  });
+  $('#input-importar').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const r = await importar(file);
+      await recargarDatos();
+      $('#dlg-ajustes').close();
+      toast(`Importadas ${r.prendas} prendas y ${r.outfits} outfits`);
+      ruta();
+    } catch (err) { toast(err.message || 'No se pudo importar'); }
+  });
+
+  try { await recargarDatos(); } catch (e) { console.error(e); toast('No se pudo abrir la base de datos'); }
+  ruta();
+  db.requestPersistence();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker no registrado', e));
+  }
+}
+
+iniciar();
