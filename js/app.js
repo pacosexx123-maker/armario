@@ -202,8 +202,10 @@ function activarDeslizarPestanas() {
     g = null;
     if (e.touches.length !== 1 || document.querySelector('dialog[open]')) return;
     if (e.target.closest(NO_DESLIZAR)) return;
-    terminarTransicion();
     const t = e.touches[0];
+    // Los bordes de la pantalla son del gesto «atrás» de Android: ahí no se cambia de pestaña
+    if (t.clientX < 24 || t.clientX > window.innerWidth - 24) return;
+    terminarTransicion();
     g = { x: t.clientX, y: t.clientY, modo: null, nueva: null, dx: 0, ancho: anchoPaso(), muestras: [] };
   }, { passive: true });
 

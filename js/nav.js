@@ -89,9 +89,25 @@ export function tabActual() {
   return 'armario';
 }
 
-// Cambiar de pestaña (añade una entrada)
+// Cambiar de pestaña (añade una entrada).
+// Si esa pestaña se dejó con pasos abiertos (p. ej. el catálogo de Añadir o un outfit a la vista),
+// se vuelve a ellos en vez de apilar una entrada nueva: así «atrás» los sigue cerrando en orden
+// y no se quedan «enterrados» debajo de otra pestaña.
 export function irATab(tab) {
   if (tab === tabActual()) return;
+  let ultimaVisita = -1;
+  for (let k = pila.length - 1; k >= 0; k--) if (pila[k].tipo === 'tab' && pila[k].tab === tab) { ultimaVisita = k; break; }
+  let pasoAbierto = -1;
+  if (ultimaVisita >= 0) {
+    for (let k = ultimaVisita + 1; k < pila.length && pila[k].tipo === 'capa'; k++) pasoAbierto = k;
+  }
+  if (pasoAbierto >= 0) {
+    const quitadas = pila.splice(pasoAbierto + 1);
+    quitadas.slice().reverse().forEach((e) => { if (e.tipo === 'capa') deshacer(e); });
+    encolar({ tipo: 'atras', n: quitadas.length, silencioso: true });
+    mostrarTab(tab);
+    return;
+  }
   pila.push({ tipo: 'tab', tab });
   encolar({ tipo: 'push', hash: tab });
   mostrarTab(tab);
