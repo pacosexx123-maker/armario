@@ -5,7 +5,7 @@ import { extraerColorDominante, colorEnPunto, describirColor, NOMBRES_COLOR, col
 import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categories.js';
 import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
-import { $, h, ICONOS, toast, chip, leerPref, guardarPref } from './ui.js';
+import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande } from './ui.js';
 import { PALETA_FAMILIAS } from './palette.js';
 import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
 
@@ -149,7 +149,12 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   });
 
   // Color
-  const swatch = h('div', { class: 'swatch' });
+  // Muestra del color: al tocarla se ve a pantalla completa para compararla con la prenda
+  const swatch = h('button', {
+    type: 'button', class: 'swatch ampliable', 'aria-label': 'Ver el color en grande', title: 'Ver el color en grande',
+    html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+    onclick: () => mostrarColorGrande(st.color.hex, st.color.nombre),
+  });
   const nombre = h('div', { class: 'color-name' });
   // Código HEX escrito a mano (con o sin #, de 3 o 6 dígitos)
   const hex = h('input', {

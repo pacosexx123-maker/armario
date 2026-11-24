@@ -156,6 +156,29 @@ main {
 .color-row { display: flex; align-items: center; gap: 14px; }
 .swatch { width: 56px; height: 56px; border-radius: 14px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .color-info { flex: 1; min-width: 0; }
+.swatch.ampliable { position: relative; border: 0; padding: 0; cursor: zoom-in; }
+.swatch.ampliable svg {
+  position: absolute; right: 4px; bottom: 4px; width: 18px; height: 18px; padding: 3px;
+  border-radius: 6px; background: rgba(255,255,255,.88); color: var(--ink); stroke-width: 2.2;
+}
+.swatch.ampliable:active { transform: scale(.95); }
+
+/* Color a pantalla completa */
+.color-grande {
+  width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+  inset: 0; cursor: zoom-out;
+}
+.color-grande::backdrop { background: #000; }
+.color-grande[open] { animation: aparecer .18s ease-out; }
+@keyframes aparecer { from { opacity: 0; } }
+.cg-info {
+  position: absolute; left: 50%; bottom: calc(28px + var(--safe-b)); transform: translateX(-50%);
+  display: grid; justify-items: center; gap: 1px; padding: 10px 20px; border-radius: 18px;
+  background: rgba(255,255,255,.92); color: var(--ink); box-shadow: 0 4px 20px rgba(0,0,0,.2); white-space: nowrap;
+}
+.cg-info strong { font-size: 16px; text-transform: capitalize; }
+.cg-info span { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 13px; color: var(--ink-2); }
+.cg-info small { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .color-name { font-weight: 700; font-size: 17px; text-transform: capitalize; }
 .hex-field { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .hex-field span { font-size: 12px; font-weight: 600; color: var(--muted); }

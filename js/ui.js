@@ -49,5 +49,20 @@ export function botonIcono(clase, icono, texto, onclick) {
   return b;
 }
 
+// Muestra un color a pantalla completa para compararlo con la prenda real.
+// Es un <dialog> modal para quedar por encima de otros diálogos abiertos.
+export function mostrarColorGrande(hex, nombre = '') {
+  const dlg = h('dialog', { class: 'color-grande', 'aria-label': `Color ${nombre} ${hex.toUpperCase()} a pantalla completa` },
+    h('div', { class: 'cg-info' },
+      h('strong', {}, nombre),
+      h('span', {}, hex.toUpperCase()),
+      h('small', {}, 'Toca para cerrar')));
+  dlg.style.background = hex;
+  dlg.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  dlg.showModal();
+}
+
 export function leerPref(k, def) { try { return localStorage.getItem(k) ?? def; } catch { return def; } }
 export function guardarPref(k, v) { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } }
