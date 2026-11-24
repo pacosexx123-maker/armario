@@ -77,56 +77,203 @@ const VISTAS = {
   inspiracion: { titulo: 'Inspiración', render: () => renderInspiracion() },
 };
 
-// Muestra una pestaña (la llama nav.js: al cambiar de pestaña y al volver atrás)
+// Muestra una pestaña (la llama nav.js: al cambiar de pestaña y al volver atrás).
+// Si ya había otra a la vista, el cambio es una transición deslizante.
 function ruta(nombre = tabActual()) {
   const vista = VISTAS[nombre] ? nombre : 'armario';
-  for (const k of Object.keys(VISTAS)) $(`#view-${k}`).hidden = k !== vista;
   document.querySelectorAll('.tabbar a').forEach((a) => {
     if (a.dataset.tab === vista) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
   $('#page-title').textContent = VISTAS[vista].titulo;
-  VISTAS[vista].render();
-  window.scrollTo(0, 0);
-  // Animación al llegar deslizando: la pantalla entra desde el lado hacia el que se desliza
-  if (direccionDeslizar) {
-    const el = $(`#view-${vista}`);
-    el.classList.remove('entra-izq', 'entra-der'); void el.offsetWidth;
-    el.classList.add(direccionDeslizar === 'izq' ? 'entra-izq' : 'entra-der');
-    direccionDeslizar = null;
+  moverIndicador(ORDEN_TABS.indexOf(vista));
+
+  const anterior = vistaVisible;
+  const pendiente = deslizePendiente; // viene de un deslizamiento con el dedo ya empezado
+  deslizePendiente = null;
+  if (!(pendiente && pendiente.nuevo === vista)) VISTAS[vista].render();
+  vistaVisible = vista;
+
+  if (!anterior || anterior === vista || $(`#view-${anterior}`).hidden) {
+    terminarTransicion();
+    for (const k of Object.keys(VISTAS)) { const el = $(`#view-${k}`); el.hidden = k !== vista; limpiar(el); }
+    window.scrollTo(0, 0);
+    return;
   }
+  const dir = ORDEN_TABS.indexOf(vista) > ORDEN_TABS.indexOf(anterior) ? 1 : -1;
+  animarCambio(anterior, vista, dir, pendiente ? pendiente.progreso : 0);
 }
 
-/* ---------- Deslizar entre las pantallas principales ---------- */
-// De derecha a izquierda → pestaña siguiente; de izquierda a derecha → anterior.
+/* ---------- Transiciones entre las pantallas principales ---------- */
 const ORDEN_TABS = ['armario', 'anadir', 'outfits', 'inspiracion'];
-let direccionDeslizar = null;
+let vistaVisible = null;
+let deslizePendiente = null;   // { nuevo, progreso } al soltar el dedo a mitad de un deslizamiento
+let transicion = null;         // { fin() } de la animación en curso
+const sinMovimiento = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const CURVA = 'cubic-bezier(.22,.8,.24,1)';
+
+// Distancia entre una pantalla y la siguiente (el ancho de la zona central, con sus márgenes)
+const anchoPaso = () => $('main').getBoundingClientRect().width;
+
+// Coloca una pantalla «flotando» encima, alineada con la que se ve, para moverla junto a ella
+function superponer(el) {
+  const m = $('main');
+  const r = m.getBoundingClientRect();
+  const cs = getComputedStyle(m);
+  const arriba = $('.topbar').getBoundingClientRect().bottom;
+  Object.assign(el.style, {
+    position: 'fixed', top: `${arriba}px`, bottom: '0', zIndex: '5', overflow: 'hidden',
+    left: `${r.left + parseFloat(cs.paddingLeft)}px`,
+    width: `${m.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)}px`,
+    pointerEvents: 'none',
+  });
+  el.hidden = false;
+}
+function limpiar(el) {
+  ['position', 'top', 'bottom', 'zIndex', 'overflow', 'left', 'width', 'pointerEvents', 'transform', 'transition', 'willChange']
+    .forEach((k) => { el.style[k] = ''; });
+}
+
+function terminarTransicion() { if (transicion) transicion.fin(); }
+
+// Anima de una pantalla a otra. dir = 1 si la nueva entra por la derecha.
+// progreso (0–1): lo ya recorrido con el dedo, para seguir desde ahí sin saltos.
+function animarCambio(viejo, nuevo, dir, progreso = 0) {
+  terminarTransicion();
+  const elV = $(`#view-${viejo}`), elN = $(`#view-${nuevo}`);
+  for (const k of Object.keys(VISTAS)) if (k !== viejo && k !== nuevo) { const el = $(`#view-${k}`); el.hidden = true; limpiar(el); }
+  const ancho = anchoPaso();
+  if (elN.style.position !== 'fixed') superponer(elN);
+  elV.hidden = false;
+  [elV, elN].forEach((e) => { e.style.transition = 'none'; e.style.willChange = 'transform'; });
+  elV.style.transform = `translateX(${-dir * progreso * ancho}px)`;
+  elN.style.transform = `translateX(${dir * (1 - progreso) * ancho}px)`;
+  void elN.offsetWidth;
+  const dur = sinMovimiento() ? 0 : Math.round(320 * (1 - progreso)) + 60;
+  [elV, elN].forEach((e) => { e.style.transition = `transform ${dur}ms ${CURVA}`; });
+  elV.style.transform = `translateX(${-dir * ancho}px)`;
+  elN.style.transform = 'translateX(0)';
+  let hecho = false;
+  const fin = () => {
+    if (hecho) return;
+    hecho = true;
+    clearTimeout(temporizador);
+    transicion = null;
+    elV.hidden = true;
+    limpiar(elV);
+    window.scrollTo(0, 0);
+    limpiar(elN);
+    elN.hidden = false;
+  };
+  const temporizador = setTimeout(fin, dur + 30);
+  transicion = { fin };
+}
+
+// Marcador de la barra inferior (la posición puede ser fraccionaria mientras se desliza)
+function moverIndicador(posicion, conAnimacion = true) {
+  const ind = $('.tab-indicador');
+  if (!ind || posicion < 0) return;
+  ind.style.transition = conAnimacion && !sinMovimiento() ? `transform 340ms ${CURVA}` : 'none';
+  ind.style.transform = `translateX(${posicion * 100}%)`;
+}
+
+/* ---------- Deslizar con el dedo (progresivo) ---------- */
+// De derecha a izquierda → pestaña siguiente; de izquierda a derecha → anterior.
+// La pantalla sigue al dedo y la de al lado entra a la vez; al soltar se completa o vuelve.
 // Zonas donde deslizar ya hace otra cosa (filas de chips, fotos para coger color, paletas, campos)
 const NO_DESLIZAR = '.scroll-x, input, select, textarea, .photo-wrap, .look-foto, .paleta-panel, .est-paleta, .otra-imagen, .segmented, .tonos-rejilla';
 function activarDeslizarPestanas() {
   const zona = $('main');
-  let toque = null;
+  let g = null; // gesto en curso
+
+  const vecina = (dx) => {
+    const i = ORDEN_TABS.indexOf(vistaVisible);
+    const j = i + (dx < 0 ? 1 : -1);
+    return j >= 0 && j < ORDEN_TABS.length ? ORDEN_TABS[j] : null;
+  };
+  const quitarVecina = () => {
+    if (g && g.nueva) { const el = $(`#view-${g.nueva}`); el.hidden = true; limpiar(el); g.nueva = null; }
+  };
+
   zona.addEventListener('touchstart', (e) => {
-    toque = null;
+    g = null;
     if (e.touches.length !== 1 || document.querySelector('dialog[open]')) return;
     if (e.target.closest(NO_DESLIZAR)) return;
+    terminarTransicion();
     const t = e.touches[0];
-    toque = { x: t.clientX, y: t.clientY, t: Date.now() };
+    g = { x: t.clientX, y: t.clientY, modo: null, nueva: null, dx: 0, ancho: anchoPaso(), muestras: [] };
   }, { passive: true });
-  zona.addEventListener('touchend', (e) => {
-    if (!toque) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - toque.x, dy = t.clientY - toque.y, dt = Date.now() - toque.t;
-    toque = null;
-    // Gesto claramente horizontal, de cierta longitud y rápido (no confundir con desplazar la página)
-    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8 || dt > 700) return;
-    const i = ORDEN_TABS.indexOf(tabActual());
-    const j = i + (dx < 0 ? 1 : -1);
-    if (i < 0 || j < 0 || j >= ORDEN_TABS.length) return;
-    direccionDeslizar = dx < 0 ? 'izq' : 'der';
-    irATab(ORDEN_TABS[j]); // igual que tocar la pestaña: añade un paso al historial
-  }, { passive: true });
-  zona.addEventListener('touchcancel', () => { toque = null; }, { passive: true });
+
+  zona.addEventListener('touchmove', (e) => {
+    if (!g) return;
+    const t = e.touches[0];
+    const dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.modo) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      g.modo = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'horizontal' : 'vertical';
+      if (g.modo === 'vertical') { g = null; return; } // es un desplazamiento normal de la página
+    }
+    if (e.cancelable) e.preventDefault(); // que la página no se mueva mientras se arrastra de lado
+    g.muestras.push({ x: t.clientX, t: performance.now() });
+    if (g.muestras.length > 5) g.muestras.shift();
+    const elV = $(`#view-${vistaVisible}`);
+    const destino = vecina(dx);
+    if (destino !== g.nueva) {
+      quitarVecina();
+      if (destino) { VISTAS[destino].render(); superponer($(`#view-${destino}`)); g.nueva = destino; }
+    }
+    const i = ORDEN_TABS.indexOf(vistaVisible);
+    if (!g.nueva) {
+      // Primera o última pestaña: se nota resistencia
+      g.dx = dx * 0.25;
+      elV.style.transition = 'none';
+      elV.style.transform = `translateX(${g.dx}px)`;
+      moverIndicador(i - g.dx / g.ancho, false);
+      return;
+    }
+    g.dx = dx;
+    const dir = dx < 0 ? 1 : -1;
+    const elN = $(`#view-${g.nueva}`);
+    elV.style.transition = 'none';
+    elN.style.transition = 'none';
+    elV.style.transform = `translateX(${dx}px)`;
+    elN.style.transform = `translateX(${dir * g.ancho + dx}px)`;
+    moverIndicador(i - dx / g.ancho, false);
+  }, { passive: false });
+
+  const soltar = () => {
+    if (!g || g.modo !== 'horizontal') { g = null; return; }
+    const gesto = g;
+    g = null;
+    const elV = $(`#view-${vistaVisible}`);
+    const m = gesto.muestras;
+    const vel = m.length > 1 ? (m[m.length - 1].x - m[0].x) / Math.max(1, m[m.length - 1].t - m[0].t) : 0; // px/ms
+    const lejos = Math.abs(gesto.dx) > gesto.ancho * 0.3;
+    const rapido = Math.abs(vel) > 0.45 && Math.sign(vel) === Math.sign(gesto.dx) && Math.abs(gesto.dx) > 30;
+    if (gesto.nueva && (lejos || rapido)) {
+      // Completar desde donde lo dejó el dedo
+      deslizePendiente = { nuevo: gesto.nueva, progreso: Math.min(1, Math.abs(gesto.dx) / gesto.ancho) };
+      irATab(gesto.nueva); // como tocar la pestaña: añade un paso al historial
+      return;
+    }
+    // Volver a su sitio
+    const dur = sinMovimiento() ? 0 : 260;
+    elV.style.transition = `transform ${dur}ms ${CURVA}`;
+    elV.style.transform = 'translateX(0)';
+    let elN = null;
+    if (gesto.nueva) {
+      elN = $(`#view-${gesto.nueva}`);
+      elN.style.transition = `transform ${dur}ms ${CURVA}`;
+      elN.style.transform = `translateX(${(gesto.dx < 0 ? 1 : -1) * gesto.ancho}px)`;
+    }
+    moverIndicador(ORDEN_TABS.indexOf(vistaVisible));
+    setTimeout(() => {
+      limpiar(elV);
+      if (elN && vistaVisible !== gesto.nueva) { elN.hidden = true; limpiar(elN); }
+    }, dur + 30);
+  };
+  zona.addEventListener('touchend', soltar, { passive: true });
+  zona.addEventListener('touchcancel', soltar, { passive: true });
 }
 
 /* ================= ARMARIO ================= */
@@ -986,7 +1133,6 @@ async function iniciar() {
   activarDeslizarPestanas();
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href^="#"]');
-    direccionDeslizar = null; // al tocar una pestaña no hay animación de deslizar
     if (!a) return;
     const tab = a.getAttribute('href').slice(1);
     if (!VISTAS[tab]) return;

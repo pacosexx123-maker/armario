@@ -554,11 +554,14 @@ input:not([type="checkbox"]):not([type="color"]):not([type="file"]), select, tex
 .bienvenida-opciones .big-btn { justify-content: center; text-align: center; font-size: 18px; padding: 18px; }
 
 /* ----- Deslizar ----- */
-/* Entre pantallas principales: la nueva entra desde el lado hacia el que se desliza */
-.view.entra-izq { animation: entraIzq .24s ease-out; }
-.view.entra-der { animation: entraDer .24s ease-out; }
-@keyframes entraIzq { from { transform: translateX(42px); opacity: .35; } }
-@keyframes entraDer { from { transform: translateX(-42px); opacity: .35; } }
+/* Entre pantallas principales: las transiciones las hace app.js (la pantalla sigue al dedo) */
+.tabbar { overflow: hidden; }
+.tab-indicador { position: absolute; top: 0; left: 0; width: 25%; height: 3px; pointer-events: none; will-change: transform; }
+.tab-indicador::after { content: ""; position: absolute; left: 50%; top: 0; width: 30px; height: 3px; margin-left: -15px; border-radius: 0 0 3px 3px; background: var(--ink); }
+.tabbar a { transition: color .25s ease; }
+.tabbar a svg { transition: transform .25s ease; }
+.tabbar a[aria-current="page"] svg { transform: translateY(-1px) scale(1.06); }
+.tabbar .plus { transition: background-color .25s ease, color .25s ease; }
 /* Color a pantalla completa: deslizar cambia de tono (la app gestiona el gesto) */
 .color-grande.deslizable { touch-action: none; transition: background-color .22s ease; }
 .color-grande.pasa-izq .cg-info { animation: cgIzq .22s ease-out; }
