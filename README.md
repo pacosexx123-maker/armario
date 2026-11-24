@@ -11,7 +11,7 @@ Armario digital para el móvil. Haz una foto a cada prenda: la app reconoce qué
 | Pestaña | Qué hace |
 |---|---|
 | **Armario** | Cuadrícula con tus prendas, filtros por categoría y por color. Toca una prenda para editarla o borrarla. |
-| **Añadir** | Haz una foto o elige una de la galería. La app detecta el color dominante (HEX + nombre) y sugiere la categoría con MobileNet. Puedes tocar la foto para coger el color de un punto, ajustarlo a mano y cambiar la categoría y los estilos. |
+| **Añadir** | Haz una foto o elige una de la galería. La app detecta el color dominante (HEX + nombre) y sugiere la categoría con MobileNet. Puedes tocar la foto para coger el color de un punto, ajustarlo a mano y cambiar la categoría y los estilos. Con «Escanear etiqueta» lee la etiqueta interior (OCR) y rellena marca, talla, composición, país de fabricación y cuidados. |
 | **Outfits** | Elige estilo (Formal, Arreglado, Informal, Deportivo), activa o no el abrigo y pulsa «Generar outfit». «Otro» da una alternativa y puedes guardar tus favoritos. |
 
 El botón de la esquina superior derecha abre la **copia de seguridad**: exporta todo (con fotos) a un archivo `.json` o impórtalo después.
@@ -33,6 +33,7 @@ El botón de la esquina superior derecha abre la **copia de seguridad**: exporta
     ├── categories.js   Categorías, estilos por defecto y mapeo de ImageNet
     ├── classifier.js   TensorFlow.js + MobileNet (carga diferida)
     ├── outfits.js      Generador de outfits y armonía de color
+    ├── label.js        Lectura de etiquetas con Tesseract.js (OCR)
     └── backup.js       Exportar / importar en JSON
 ```
 
@@ -88,6 +89,7 @@ Si no te importa la barra, puedes saltarte este paso: la app funciona igual.
 
 - **Fotos:** usa un fondo liso que contraste con la prenda (suelo, cama, pared). La app estima el color del fondo a partir de los bordes de la foto y lo descarta antes de calcular el color de la prenda.
 - **Clasificador:** la primera vez se descargan TensorFlow.js y el modelo MobileNet (unos 14 MB), así que necesitas conexión. Después queda guardado en el móvil y funciona offline. MobileNet está entrenado con ImageNet y no distingue bien todas las categorías (por ejemplo camisa y camiseta, o pantalón y chándal). Por eso la categoría siempre se puede cambiar, y si el modelo no está seguro te pide que la elijas tú.
+- **Etiquetas:** el lector (Tesseract.js, en español e inglés) se descarga la primera vez que escaneas una etiqueta (unos 10 MB) y luego funciona sin conexión. Funciona mejor con la etiqueta estirada, bien iluminada y enfocada; si la foto sale girada, la app prueba también a 90°. Lee el texto, no los símbolos de lavado: los cuidados solo se detectan si vienen escritos. Revisa siempre los datos, porque todos los campos se pueden editar.
 - **Estilos:** cada prenda tiene etiquetas formal / casual / deporte. Se rellenan según la categoría, pero conviene revisarlas: el generador solo usa prendas compatibles con el estilo elegido.
 - **Copia de seguridad:** los datos viven en el almacenamiento de la app. Si la desinstalas o borras sus datos se pierden, así que exporta una copia de vez en cuando.
 

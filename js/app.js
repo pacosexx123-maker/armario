@@ -127,7 +127,10 @@ function renderArmario() {
       h('div', { class: 'meta' },
         h('span', { class: 'dot', style: { background: p.color?.hex || '#ccc' } }),
         h('span', { class: 'name' }, nombreCategoria(p.categoria)),
-        h('span', { class: 'sub' }, p.color?.nombre || ''))
+        h('span', { class: 'sub' }, p.color?.nombre || '')),
+      (p.etiqueta?.marca || p.etiqueta?.talla)
+        ? h('div', { class: 'meta2' }, [p.etiqueta.marca, p.etiqueta.talla && `Talla ${p.etiqueta.talla}`].filter(Boolean).join(' · '))
+        : null
     )));
 }
 
@@ -138,7 +141,7 @@ function chip(texto, activo, onclick, colorDot) {
 
 /* ================= EDITOR DE PRENDA ================= */
 // Se usa tanto para añadir como para editar.
-function crearEditor({ blob, canvas, color, categoria = '', estilos = [], modo, onGuardar, onCancelar, onBorrar }) {
+function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etiqueta = null, modo, onGuardar, onCancelar, onBorrar }) {
   const st = {
     color: { ...color },
     colorAuto: { ...color },
@@ -210,6 +213,79 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], modo, 
   }
   pintarEstilos();
 
+  // Etiqueta de la prenda (OCR): marca, talla, composición, origen y cuidados
+  const et = { marca: '', talla: '', composicion: '', origen: '', cuidados: [], texto: '', ...(etiqueta || {}) };
+  const hayDatos = () => !!(et.marca || et.talla || et.composicion || et.origen || et.cuidados.length);
+  const campos = {};
+  const campo = (id, texto, ph, ancho = false) => {
+    const valor = id === 'cuidados' ? et.cuidados.join(', ') : et[id];
+    const input = h('input', { type: 'text', value: valor || '', placeholder: ph, autocomplete: 'off', autocapitalize: 'sentences' });
+    input.addEventListener('input', () => {
+      if (id === 'cuidados') et.cuidados = input.value.split(',').map((s) => s.trim()).filter(Boolean);
+      else et[id] = input.value;
+    });
+    campos[id] = input;
+    return h('label', { class: 'field' + (ancho ? ' wide' : '') }, h('span', {}, texto), input);
+  };
+  const cajaCampos = h('div', { class: 'fields', hidden: !hayDatos() },
+    campo('marca', 'Marca', 'Ej. Zara'),
+    campo('talla', 'Talla', 'Ej. M o 40'),
+    campo('composicion', 'Composición', 'Ej. 100% algodón', true),
+    campo('origen', 'Fabricado en', 'Ej. Portugal'),
+    campo('cuidados', 'Cuidados', 'Ej. Lavar a 30 °C', true));
+  const textoLeido = h('pre', { class: 'ocr-text' }, et.texto);
+  const detalles = h('details', { class: 'ocr', hidden: !et.texto }, h('summary', {}, 'Ver texto leído'), textoLeido);
+  const etEstado = h('div', { class: 'ai-status' });
+  const btnManual = h('button', { class: 'link-btn', type: 'button', hidden: hayDatos() }, 'O escribir los datos a mano');
+  btnManual.addEventListener('click', () => { cajaCampos.hidden = false; btnManual.hidden = true; campos.marca.focus(); });
+  const estadoEt = (tipo, texto) => {
+    etEstado.className = 'ai-status' + (tipo === 'warn' ? ' warn' : '');
+    etEstado.replaceChildren(...(tipo === 'cargando' ? [h('span', { class: 'spinner' })] : []), texto || '');
+  };
+  const inputEtCam = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true });
+  const inputEtGal = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  const btnEtCam = h('label', { class: 'btn' }, inputEtCam, 'Escanear etiqueta');
+  const btnEtGal = h('label', { class: 'btn' }, inputEtGal, 'Desde galería');
+  async function escanearEtiqueta(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    [btnEtCam, btnEtGal].forEach((b) => b.setAttribute('disabled', ''));
+    estadoEt('cargando', 'Preparando la foto…');
+    try {
+      const cv = await blobToCanvas(file, 2000);
+      const { leerEtiqueta } = await import('./label.js');
+      const r = await leerEtiqueta(cv, (msg) => { if (!st.cerrado) estadoEt('cargando', msg); });
+      if (st.cerrado) return;
+      // Solo se rellenan los datos detectados; no se borra lo que ya hubiera
+      for (const k of ['marca', 'talla', 'composicion', 'origen']) if (r[k]) { et[k] = r[k]; campos[k].value = r[k]; }
+      if (r.cuidados.length) { et.cuidados = r.cuidados; campos.cuidados.value = r.cuidados.join(', '); }
+      et.texto = r.texto;
+      textoLeido.textContent = r.texto;
+      detalles.hidden = !r.texto;
+      cajaCampos.hidden = false;
+      btnManual.hidden = true;
+      const n = ['marca', 'talla', 'composicion', 'origen'].filter((k) => r[k]).length + (r.cuidados.length ? 1 : 0);
+      if (!r.texto) estadoEt('warn', 'No he podido leer texto. Prueba con más luz, la etiqueta estirada y bien enfocada.');
+      else if (!n) estadoEt('warn', 'He leído texto pero no reconozco los datos. Mira el texto leído y rellénalos a mano.');
+      else estadoEt('ok', `He encontrado ${n} ${n === 1 ? 'dato' : 'datos'} en la etiqueta. Revísalos por si hay algún error.`);
+    } catch (err) {
+      console.warn(err);
+      if (!st.cerrado) estadoEt('warn', 'No se pudo leer la etiqueta (la primera vez necesita conexión).');
+    } finally {
+      [btnEtCam, btnEtGal].forEach((b) => b.removeAttribute('disabled'));
+    }
+  }
+  inputEtCam.addEventListener('change', escanearEtiqueta);
+  inputEtGal.addEventListener('change', escanearEtiqueta);
+  const datosEtiqueta = () => {
+    const limpio = {
+      marca: et.marca.trim(), talla: et.talla.trim(), composicion: et.composicion.trim(),
+      origen: et.origen.trim(), cuidados: et.cuidados, texto: et.texto,
+    };
+    return hayDatos() || et.texto ? limpio : null;
+  };
+
   // Acciones
   const btnGuardar = h('button', { class: 'btn primary', type: 'button' }, modo === 'editar' ? 'Guardar cambios' : 'Guardar prenda');
   btnGuardar.addEventListener('click', async () => {
@@ -217,7 +293,7 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], modo, 
     if (!st.estilos.size) { toast('Marca al menos un estilo'); return; }
     btnGuardar.disabled = true;
     try {
-      await onGuardar({ categoria: st.categoria, color: st.color, estilos: [...st.estilos] });
+      await onGuardar({ categoria: st.categoria, color: st.color, estilos: [...st.estilos], etiqueta: datosEtiqueta() });
       destruir();
     } catch (e) {
       console.error(e);
@@ -243,6 +319,11 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], modo, 
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Estilo'),
       chipsEstilo),
+    h('div', { class: 'card' },
+      h('p', { class: 'field-label' }, 'Etiqueta ', h('span', { class: 'opt' }, '(opcional)')),
+      h('p', { class: 'muted small hint' }, 'Haz una foto de la etiqueta interior para guardar la marca, la talla y la composición.'),
+      h('div', { class: 'label-actions' }, btnEtCam, btnEtGal),
+      etEstado, btnManual, cajaCampos, detalles),
     acciones);
 
   function destruir() {
@@ -344,6 +425,7 @@ async function abrirEdicion(prenda) {
     color: prenda.color || { hex: '#cccccc', nombre: 'gris claro' },
     categoria: prenda.categoria,
     estilos: prenda.estilos || [],
+    etiqueta: prenda.etiqueta,
     onGuardar: async (datos) => {
       await db.put('prendas', { ...prenda, ...datos, actualizada: Date.now() });
       await recargarDatos();

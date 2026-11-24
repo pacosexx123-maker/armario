@@ -105,7 +105,7 @@ main {
 .item {
   display: block; width: 100%; padding: 0; text-align: left;
   border: 0; background: var(--surface); border-radius: var(--radius);
-  overflow: hidden; box-shadow: var(--shadow);
+  overflow: hidden; box-shadow: var(--shadow); align-self: start;
 }
 .item:active { transform: scale(.985); }
 .item img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; background: var(--surface-2); }
@@ -173,6 +173,30 @@ select.needs-choice { border-color: var(--accent); box-shadow: 0 0 0 3px var(--a
 .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--ink); animation: spin .8s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .editor-actions { display: grid; gap: 10px; }
+
+/* Etiqueta (OCR) */
+.field-label .opt { font-weight: 500; text-transform: none; letter-spacing: 0; }
+.hint { margin: -2px 0 0; }
+.label-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.label-actions .btn { min-height: 44px; padding: 0 12px; font-size: 14px; }
+.link-btn { background: none; border: 0; padding: 6px 0 0; color: var(--ink-2); text-decoration: underline; font-size: 14px; font-weight: 500; }
+.fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.field input {
+  width: 100%; height: 44px; padding: 0 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--surface); font-size: 16px; font-weight: 500;
+}
+.field input:focus { outline: 2px solid var(--ink); outline-offset: -1px; }
+.ocr { margin-top: 12px; font-size: 13px; }
+.ocr summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
+.ocr-text {
+  white-space: pre-wrap; word-break: break-word; margin: 8px 0 0; padding: 10px; border-radius: 10px;
+  background: var(--surface-2); font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12px;
+  max-height: 200px; overflow: auto;
+}
+.item .meta2 { margin-top: -6px; padding: 0 12px 12px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ----- Outfits ----- */
 .controls { display: grid; gap: 14px; }

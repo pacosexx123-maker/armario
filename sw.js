@@ -1,6 +1,6 @@
 // Service worker de Armario: cachea la app para que funcione sin conexión.
 // Cambia VERSION cada vez que publiques cambios para que los móviles se actualicen.
-const VERSION = 'armario-v1';
+const VERSION = 'armario-v2';
 const APP_CACHE = `${VERSION}-app`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -16,6 +16,7 @@ const APP_SHELL = [
   './js/categories.js',
   './js/classifier.js',
   './js/outfits.js',
+  './js/label.js',
   './js/backup.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -23,7 +24,7 @@ const APP_SHELL = [
 
 // Dominios externos que se guardan en caché la primera vez que se usan
 // (tipografías y librerías de TensorFlow.js).
-const RUNTIME_HOSTS = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+const RUNTIME_HOSTS = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'tessdata.projectnaptha.com'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
