@@ -89,7 +89,11 @@ function abrirTonosAmpliados(familia, actual, onElegir) {
       type: 'button', class: 'pal-tono', style: { background: t }, 'data-hex': t,
       'aria-label': `${describirColor(t).nombre} ${t.toUpperCase()}`, 'aria-pressed': String(t === (actual || '').toLowerCase()),
       // Se ve a pantalla completa; desde ahí se elige o se vuelve a los 32 tonos
-      onclick: () => mostrarColorGrande(t, describirColor(t).nombre, { onElegir: (hex) => { onElegir(hex); dlg.close(); } }),
+      onclick: () => mostrarColorGrande(t, describirColor(t).nombre, {
+        onElegir: (hex) => { onElegir(hex); dlg.close(); },
+        lista: filas.flat(),                         // deslizar recorre los 32 tonos en orden
+        nombreDe: (hex) => describirColor(hex).nombre,
+      }),
     }))));
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', () => dlg.remove());

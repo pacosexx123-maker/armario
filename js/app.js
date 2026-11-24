@@ -88,6 +88,45 @@ function ruta(nombre = tabActual()) {
   $('#page-title').textContent = VISTAS[vista].titulo;
   VISTAS[vista].render();
   window.scrollTo(0, 0);
+  // Animación al llegar deslizando: la pantalla entra desde el lado hacia el que se desliza
+  if (direccionDeslizar) {
+    const el = $(`#view-${vista}`);
+    el.classList.remove('entra-izq', 'entra-der'); void el.offsetWidth;
+    el.classList.add(direccionDeslizar === 'izq' ? 'entra-izq' : 'entra-der');
+    direccionDeslizar = null;
+  }
+}
+
+/* ---------- Deslizar entre las pantallas principales ---------- */
+// De derecha a izquierda → pestaña siguiente; de izquierda a derecha → anterior.
+const ORDEN_TABS = ['armario', 'anadir', 'outfits', 'inspiracion'];
+let direccionDeslizar = null;
+// Zonas donde deslizar ya hace otra cosa (filas de chips, fotos para coger color, paletas, campos)
+const NO_DESLIZAR = '.scroll-x, input, select, textarea, .photo-wrap, .look-foto, .paleta-panel, .est-paleta, .otra-imagen, .segmented, .tonos-rejilla';
+function activarDeslizarPestanas() {
+  const zona = $('main');
+  let toque = null;
+  zona.addEventListener('touchstart', (e) => {
+    toque = null;
+    if (e.touches.length !== 1 || document.querySelector('dialog[open]')) return;
+    if (e.target.closest(NO_DESLIZAR)) return;
+    const t = e.touches[0];
+    toque = { x: t.clientX, y: t.clientY, t: Date.now() };
+  }, { passive: true });
+  zona.addEventListener('touchend', (e) => {
+    if (!toque) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - toque.x, dy = t.clientY - toque.y, dt = Date.now() - toque.t;
+    toque = null;
+    // Gesto claramente horizontal, de cierta longitud y rápido (no confundir con desplazar la página)
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8 || dt > 700) return;
+    const i = ORDEN_TABS.indexOf(tabActual());
+    const j = i + (dx < 0 ? 1 : -1);
+    if (i < 0 || j < 0 || j >= ORDEN_TABS.length) return;
+    direccionDeslizar = dx < 0 ? 'izq' : 'der';
+    irATab(ORDEN_TABS[j]); // igual que tocar la pestaña: añade un paso al historial
+  }, { passive: true });
+  zona.addEventListener('touchcancel', () => { toque = null; }, { passive: true });
 }
 
 /* ================= ARMARIO ================= */
@@ -944,8 +983,10 @@ async function iniciar() {
   // Navegación: pestaña inicial desde la URL y enlaces internos (#armario, #anadir…) sin recargar
   const inicial = (location.hash || '#armario').slice(1);
   iniciarNavegacion(VISTAS[inicial] ? inicial : 'armario', (tab) => ruta(tab));
+  activarDeslizarPestanas();
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href^="#"]');
+    direccionDeslizar = null; // al tocar una pestaña no hay animación de deslizar
     if (!a) return;
     const tab = a.getAttribute('href').slice(1);
     if (!VISTAS[tab]) return;

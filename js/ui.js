@@ -54,19 +54,60 @@ export function botonIcono(clase, icono, texto, onclick) {
 // Muestra un color a pantalla completa para compararlo con la prenda real.
 // Es un <dialog> modal para quedar por encima de otros diálogos abiertos.
 // Con onElegir aparecen los botones «Volver» y «Elegir este color».
-export function mostrarColorGrande(hex, nombre = '', { onElegir = null } = {}) {
+// Con lista (y nombreDe), se puede deslizar: de derecha a izquierda pasa al color siguiente
+// de la lista y de izquierda a derecha al anterior.
+export function mostrarColorGrande(hex, nombre = '', { onElegir = null, lista = null, nombreDe = null } = {}) {
+  let indice = lista ? Math.max(0, lista.indexOf(hex)) : 0;
+  let actual = hex;
+  const conLista = !!(lista && lista.length > 1);
+  const elNombre = h('strong', {}, nombre);
+  const elHex = h('span', {}, hex.toUpperCase());
+  const elPosicion = conLista ? h('small', { class: 'cg-posicion' }) : null;
   const acciones = onElegir
     ? h('div', { class: 'cg-acciones' },
       h('button', { class: 'btn', type: 'button', onclick: (e) => { e.stopPropagation(); dlg.close(); } }, 'Volver'),
-      h('button', { class: 'btn primary', type: 'button', onclick: (e) => { e.stopPropagation(); dlg.close(); onElegir(hex); } }, 'Elegir este color'))
+      h('button', { class: 'btn primary', type: 'button', onclick: (e) => { e.stopPropagation(); dlg.close(); onElegir(actual); } }, 'Elegir este color'))
     : null;
-  const dlg = h('dialog', { class: 'color-grande', 'aria-label': `Color ${nombre} ${hex.toUpperCase()} a pantalla completa` },
+  const dlg = h('dialog', { class: 'color-grande' + (conLista ? ' deslizable' : ''), 'aria-label': `Color ${nombre} ${hex.toUpperCase()} a pantalla completa` },
     h('div', { class: 'cg-info' + (onElegir ? ' con-acciones' : '') },
-      h('strong', {}, nombre),
-      h('span', {}, hex.toUpperCase()),
+      elNombre, elHex, elPosicion,
       onElegir ? acciones : h('small', {}, 'Toca para cerrar')));
-  dlg.style.background = hex;
-  dlg.addEventListener('click', (e) => { if (!onElegir || !e.target.closest('.cg-info')) dlg.close(); });
+
+  const pintar = () => {
+    actual = conLista ? lista[indice] : hex;
+    dlg.style.background = actual;
+    elHex.textContent = actual.toUpperCase();
+    if (conLista) {
+      elNombre.textContent = nombreDe ? nombreDe(actual) : '';
+      elPosicion.textContent = `${indice + 1} de ${lista.length} · desliza para ver otros tonos`;
+    }
+    dlg.setAttribute('aria-label', `Color ${elNombre.textContent} ${actual.toUpperCase()} a pantalla completa`);
+  };
+  pintar();
+
+  // Deslizar para cambiar de tono (sin salir de la pantalla completa)
+  let inicio = null, deslizado = false;
+  if (conLista) {
+    dlg.addEventListener('pointerdown', (e) => { inicio = { x: e.clientX, y: e.clientY }; });
+    dlg.addEventListener('pointerup', (e) => {
+      if (!inicio) return;
+      const dx = e.clientX - inicio.x, dy = e.clientY - inicio.y;
+      inicio = null;
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      deslizado = true; // el «click» que llega después no debe cerrar
+      const nuevo = Math.min(lista.length - 1, Math.max(0, indice + (dx < 0 ? 1 : -1)));
+      if (nuevo === indice) { dlg.classList.remove('tope'); void dlg.offsetWidth; dlg.classList.add('tope'); return; }
+      dlg.classList.remove('pasa-izq', 'pasa-der'); void dlg.offsetWidth;
+      dlg.classList.add(dx < 0 ? 'pasa-izq' : 'pasa-der');
+      indice = nuevo;
+      pintar();
+    });
+    dlg.addEventListener('pointercancel', () => { inicio = null; });
+  }
+  dlg.addEventListener('click', (e) => {
+    if (deslizado) { deslizado = false; return; }
+    if (!onElegir || !e.target.closest('.cg-info')) dlg.close();
+  });
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);
   abrirDialogo(dlg); // «atrás» lo cierra

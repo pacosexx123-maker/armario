@@ -552,3 +552,19 @@ input:not([type="checkbox"]):not([type="color"]):not([type="file"]), select, tex
 .bienvenida h2 { font-family: var(--font-display); font-weight: 600; font-size: 26px; margin: 0 0 6px; }
 .bienvenida-opciones { display: grid; gap: 10px; margin-top: 18px; }
 .bienvenida-opciones .big-btn { justify-content: center; text-align: center; font-size: 18px; padding: 18px; }
+
+/* ----- Deslizar ----- */
+/* Entre pantallas principales: la nueva entra desde el lado hacia el que se desliza */
+.view.entra-izq { animation: entraIzq .24s ease-out; }
+.view.entra-der { animation: entraDer .24s ease-out; }
+@keyframes entraIzq { from { transform: translateX(42px); opacity: .35; } }
+@keyframes entraDer { from { transform: translateX(-42px); opacity: .35; } }
+/* Color a pantalla completa: deslizar cambia de tono (la app gestiona el gesto) */
+.color-grande.deslizable { touch-action: none; transition: background-color .22s ease; }
+.color-grande.pasa-izq .cg-info { animation: cgIzq .22s ease-out; }
+.color-grande.pasa-der .cg-info { animation: cgDer .22s ease-out; }
+.color-grande.tope .cg-info { animation: cgTope .25s ease-out; }
+@keyframes cgIzq { from { transform: translateX(calc(-50% + 36px)); opacity: .3; } }
+@keyframes cgDer { from { transform: translateX(calc(-50% - 36px)); opacity: .3; } }
+@keyframes cgTope { 30% { transform: translateX(calc(-50% + 8px)); } 60% { transform: translateX(calc(-50% - 8px)); } }
+.cg-posicion { font-size: 11px; color: var(--muted); margin-top: 2px; }
