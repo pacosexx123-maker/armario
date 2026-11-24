@@ -157,7 +157,16 @@ main {
 .swatch { width: 56px; height: 56px; border-radius: 14px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .color-info { flex: 1; min-width: 0; }
 .color-name { font-weight: 700; font-size: 17px; text-transform: capitalize; }
-.color-hex { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; color: var(--muted); font-size: 13px; }
+.hex-field { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.hex-field span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.hex-input {
+  width: 9.5ch; min-width: 0; height: 38px; padding: 0 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 16px; letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.hex-input:focus { outline: 2px solid var(--ink); outline-offset: -1px; }
+.hex-input.invalid { border-color: var(--danger); outline-color: var(--danger); color: var(--danger); }
 .color-actions { display: flex; gap: 8px; margin-top: 12px; }
 .color-actions .btn { min-height: 40px; padding: 0 14px; font-size: 14px; flex: 1; position: relative; overflow: hidden; }
 .color-actions input[type="color"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }

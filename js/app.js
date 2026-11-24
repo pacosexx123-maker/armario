@@ -176,15 +176,30 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
   // Color
   const swatch = h('div', { class: 'swatch' });
   const nombre = h('div', { class: 'color-name' });
-  const hex = h('div', { class: 'color-hex' });
+  // Código HEX escrito a mano (con o sin #, de 3 o 6 dígitos)
+  const hex = h('input', {
+    type: 'text', class: 'hex-input', maxlength: '7', spellcheck: 'false', autocomplete: 'off',
+    autocapitalize: 'characters', inputmode: 'text', 'aria-label': 'Código de color HEX', placeholder: '#000000',
+  });
+  const leerHex = (texto) => {
+    const v = texto.trim().replace(/^#/, '');
+    return /^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? '#' + v : null;
+  };
+  hex.addEventListener('input', () => {
+    const valor = leerHex(hex.value);
+    hex.classList.toggle('invalid', !valor && hex.value.trim() !== '');
+    if (valor) { marca.hidden = true; ponerColor(describirColor(valor), true); }
+  });
+  hex.addEventListener('blur', () => { hex.classList.remove('invalid'); hex.value = st.color.hex.toUpperCase(); });
+  hex.addEventListener('keydown', (e) => { if (e.key === 'Enter') hex.blur(); });
   const inputColor = h('input', { type: 'color', 'aria-label': 'Ajustar color a mano' });
   inputColor.addEventListener('input', () => { marca.hidden = true; ponerColor(describirColor(inputColor.value)); });
   const btnAuto = h('button', { class: 'btn', type: 'button', onclick: () => { marca.hidden = true; ponerColor(st.colorAuto); } }, 'Automático');
-  function ponerColor(c) {
+  function ponerColor(c, desdeTeclado = false) {
     st.color = { hex: c.hex, nombre: c.nombre };
     swatch.style.background = c.hex;
     nombre.textContent = c.nombre;
-    hex.textContent = c.hex.toUpperCase();
+    if (!desdeTeclado) { hex.value = c.hex.toUpperCase(); hex.classList.remove('invalid'); }
     inputColor.value = c.hex;
   }
   ponerColor(st.color);
@@ -309,9 +324,10 @@ function crearEditor({ blob, canvas, color, categoria = '', estilos = [], etique
     wrap,
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Color'),
-      h('div', { class: 'color-row' }, swatch, h('div', { class: 'color-info' }, nombre, hex)),
+      h('div', { class: 'color-row' }, swatch, h('div', { class: 'color-info' }, nombre,
+        h('label', { class: 'hex-field' }, h('span', {}, 'Código'), hex))),
       h('div', { class: 'color-actions' },
-        h('label', { class: 'btn' }, 'Ajustar a mano', inputColor),
+        h('label', { class: 'btn' }, 'Selector', inputColor),
         btnAuto)),
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Categoría'),
