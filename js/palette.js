@@ -1,7 +1,7 @@
 // Paleta de muestras para elegir el color de una prenda a mano.
 // Cada familia tiene sus tonos ordenados de claro a oscuro.
 
-import { h } from './ui.js';
+import { h, mostrarColorGrande } from './ui.js';
 import { describirColor, hexToLab } from './color.js';
 
 export const PALETA_FAMILIAS = [
@@ -83,11 +83,12 @@ function abrirTonosAmpliados(familia, actual, onElegir) {
     html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>', onclick: () => dlg.close() });
   dlg.append(
     h('div', { class: 'sheet-head' }, h('h2', {}, familia.nombre), cerrar),
-    h('p', { class: 'muted small' }, 'De claro a oscuro. Toca un tono para elegirlo.'),
+    h('p', { class: 'muted small' }, 'De claro a oscuro. Toca un tono para verlo en grande y compararlo con la prenda.'),
     h('div', { class: 'tonos-rejilla' }, ...filas.flat().map((t) => h('button', {
       type: 'button', class: 'pal-tono', style: { background: t }, 'data-hex': t,
       'aria-label': `${describirColor(t).nombre} ${t.toUpperCase()}`, 'aria-pressed': String(t === (actual || '').toLowerCase()),
-      onclick: () => { onElegir(t); dlg.close(); },
+      // Se ve a pantalla completa; desde ahí se elige o se vuelve a los 32 tonos
+      onclick: () => mostrarColorGrande(t, describirColor(t).nombre, { onElegir: (hex) => { onElegir(hex); dlg.close(); } }),
     }))));
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', () => dlg.remove());

@@ -189,6 +189,9 @@ main {
 .cg-info strong { font-size: 16px; text-transform: capitalize; }
 .cg-info span { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 13px; color: var(--ink-2); }
 .cg-info small { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.cg-info.con-acciones { padding: 12px 14px 14px; cursor: default; }
+.cg-acciones { display: flex; gap: 8px; margin-top: 10px; }
+.cg-acciones .btn { min-height: 42px; padding: 0 16px; font-size: 14px; }
 .color-name { font-weight: 700; font-size: 17px; text-transform: capitalize; }
 .hex-field { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .hex-field span { font-size: 12px; font-weight: 600; color: var(--muted); }
