@@ -62,7 +62,10 @@ export async function renderInspiracion() {
   await Promise.all([cargarBiblioteca(), recargarMisLooks()]);
   const prendas = ctx.prendas();
 
-  const todos = [...misLooks, ...biblioteca];
+  // Solo los looks del género elegido en Ajustes y los unisex; los míos (desde foto) siempre
+  const genero = leerPref('genero', '') || 'ambos';
+  const delGenero = (l) => l.mio || genero === 'ambos' || !l.genero || l.genero === 'unisex' || l.genero === genero;
+  const todos = [...misLooks, ...biblioteca].filter(delGenero);
   const lista = todos
     .filter((l) => (filtros.estilo === 'mios' ? l.mio : !filtros.estilo || l.estilo === filtros.estilo))
     .filter((l) => !filtros.temporada || l.temporada === filtros.temporada || l.temporada === 'todo el año')

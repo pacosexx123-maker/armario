@@ -541,3 +541,14 @@ input:not([type="checkbox"]):not([type="color"]):not([type="file"]), select, tex
 .contador-fila p { margin: 8px 0; }
 .contador-fila .link-btn { padding: 0; font-weight: 600; color: var(--accent); }
 #armario-sin-resultados { margin: 4px 0 12px; }
+
+/* ----- Ajustes: mostrar contenido de ----- */
+.segmented.tres { grid-template-columns: repeat(3, 1fr); }
+#dlg-ajustes .sub-title:first-of-type { margin-top: 8px; }
+.basico-genero { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 99px; }
+
+/* Primera vez: pantalla para elegir */
+.bienvenida { padding-top: 26px; }
+.bienvenida h2 { font-family: var(--font-display); font-weight: 600; font-size: 26px; margin: 0 0 6px; }
+.bienvenida-opciones { display: grid; gap: 10px; margin-top: 18px; }
+.bienvenida-opciones .big-btn { justify-content: center; text-align: center; font-size: 18px; padding: 18px; }

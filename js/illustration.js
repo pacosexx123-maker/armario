@@ -40,7 +40,14 @@ const ICONOS = {
   pantalon_traje: { d: 'M26 4L74 4L80 96L58 96L50 30L42 96L20 96Z', det: 'M26 12L74 12M50 12L50 30M34 30L31 96M66 30L69 96' },
   mocasines: { d: 'M4 72Q6 58 22 58L50 56Q62 52 74 54L92 62Q99 70 92 74L4 74Z', det: 'M4 70L95 70M50 58Q58 65 72 60M54 62L68 60' },
   botines: { d: 'M28 30L52 30L54 58L84 64Q96 68 94 80L24 80Z', det: 'M24 74L94 74M40 30L40 56M28 36L52 36' },
-  sandalias: { d: 'M6 74Q8 68 20 68L84 66Q96 68 94 76L6 78ZM30 68Q40 48 54 66L49 66Q40 55 35 68ZM58 66Q66 50 76 66L71 66Q66 57 63 66Z', det: 'M8 74L93 74' },
+  // Corte de mujer: cintura entallada (camisa, americana) y talle alto (pantalón)
+  camisa_mujer: { d: 'M32 8L44 4L50 12L56 4L68 8L82 18L94 66L82 70L71 38Q65 62 70 96L30 96Q35 62 29 38L18 70L6 66L18 18Z', det: 'M50 12L50 96M44 4L40 16L50 12L60 16L56 4M50 30L50 30M50 50L50 50' },
+  chaqueta_mujer: { d: 'M33 6L67 6L82 16L94 70L82 74L71 38Q64 62 70 92L30 92Q36 62 29 38L18 74L6 70L18 16Z', det: 'M50 40L50 92M37 6L50 40L63 6M44 60L44 60M44 72L44 72' },
+  pantalon_mujer: { d: 'M30 4L70 4L75 30L73 96L57 96L50 34L43 96L27 96L25 30Z', det: 'M30 10L70 10M50 10L50 34' },
+  pantalon_traje_mujer: { d: 'M30 4L70 4L75 30L76 96L57 96L50 34L43 96L24 96L25 30Z', det: 'M30 10L70 10M50 10L50 34M37 34L34 96M63 34L66 96' },
+  bailarinas: { d: 'M8 72Q6 58 22 58L60 56Q80 54 92 63Q97 69 90 73L10 74Z', det: 'M28 58Q44 67 60 57M8 71L93 71' },
+  salones: { d: 'M13 48Q16 43 23 46Q40 58 62 63Q80 61 92 64Q99 67 95 73L58 74Q38 66 25 61L22 85L15 85L13 55Z', det: 'M23 46Q33 52 43 56M58 74L95 73' },
+  sandalias: { d:'M6 74Q8 68 20 68L84 66Q96 68 94 76L6 78ZM30 68Q40 48 54 66L49 66Q40 55 35 68ZM58 66Q66 50 76 66L71 66Q66 57 63 66Z', det: 'M8 74L93 74' },
 };
 
 // Silueta de una prenda (icono) rellena con su color de base y con el estampado
@@ -50,6 +57,7 @@ let siguienteId = 0;
 const ENCUADRE = {
   zapatillas: '-2 -11 104 139', zapatos: '-2 -7 104 139', mocasines: '-2 -6 104 139',
   sandalias: '-2 -6 104 139', botas: '-2 -26 104 139', botines: '-2 -14 104 139',
+  bailarinas: '-2 -5 104 139', salones: '-2 -3 104 139',
 };
 export function svgPrenda(icono, base, estampado, { fondo = true } = {}) {
   const ic = ICONOS[icono] || ICONOS.camiseta;

@@ -8,7 +8,12 @@ import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande, mostrarFotoGrande } from './ui.js';
 import { svgPrenda, svgADataURL } from './illustration.js';
-import { GRUPOS_BASICOS } from './basics.js';
+import { gruposBasicos } from './basics.js';
+
+// Preferencia «Mostrar contenido de»: 'mujer' | 'hombre' | 'ambos' ('' si aún no se ha elegido)
+const NOMBRE_GENERO = { mujer: 'Mujer', hombre: 'Hombre', ambos: 'Ambos' };
+const generoElegido = () => leerPref('genero', '');
+const generoPreferido = () => generoElegido() || 'ambos';
 import { crearPaleta } from './palette.js';
 import { crearEditorEstampado, detectarEstampado, estampadoDe, normalizarEstampado, fondoEstampado, textoSugerencia, TIPOS_ESTAMPADO } from './pattern.js';
 import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
@@ -687,12 +692,14 @@ function mostrarCatalogoBasicos({ nuevo = true } = {}) {
       h('h2', { class: 'section-title' }, 'Elige un básico'),
       h('button', { class: 'link-btn', type: 'button', onclick: () => atras() }, 'Volver')),
     h('p', { class: 'muted small' }, 'Después eliges su color y, si quieres, el estampado.'),
-    ...GRUPOS_BASICOS.map((g) => h('section', { class: 'catalogo-grupo' },
+    ...gruposBasicos(generoPreferido()).map((g) => h('section', { class: 'catalogo-grupo' },
       h('h3', { class: 'sub-title' }, g.nombre),
       h('div', { class: 'catalogo' }, ...g.basicos.map((b) =>
         h('button', { class: 'basico-card', type: 'button', onclick: () => editarBasicoNuevo(b) },
           h('span', { class: 'basico-mini', html: svgPrenda(b.icono, b.color, null, { fondo: false }) }),
-          h('span', { class: 'basico-nombre' }, b.nombre)))))));
+          h('span', { class: 'basico-nombre' }, b.nombre),
+          // Con «Ambos», se indica el corte de las prendas que tienen versión de mujer y de hombre
+          generoPreferido() === 'ambos' && b.genero !== 'unisex' ? h('span', { class: 'basico-genero' }, NOMBRE_GENERO[b.genero]) : null))))));
   window.scrollTo(0, 0);
 }
 
@@ -902,6 +909,28 @@ async function abrirAjustes() {
   const version = await versionInstalada();
   if (version) info += ` · Versión ${version}`;
   $('#info-almacen').textContent = info;
+  marcarGenero();
+  abrirDialogo(dlg);
+}
+
+/* ================= MOSTRAR CONTENIDO DE (MUJER / HOMBRE / AMBOS) ================= */
+function marcarGenero() {
+  const g = generoPreferido();
+  document.querySelectorAll('#ajuste-genero button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.genero === g)));
+}
+
+function elegirGenero(g) {
+  guardarPref('genero', g);
+  marcarGenero();
+  // Repintar lo que dependa de la preferencia: Inspiración y el catálogo de básicos si está a la vista
+  if (tabActual() === 'inspiracion') renderInspiracion();
+  if ($('#anadir-editor .catalogo')) mostrarCatalogoBasicos({ nuevo: false });
+}
+
+// La primera vez (o si aún no se ha elegido) se pregunta con una pantalla sencilla
+function preguntarGeneroSiHaceFalta() {
+  if (generoElegido()) return;
+  const dlg = $('#dlg-bienvenida');
   abrirDialogo(dlg);
 }
 
@@ -948,6 +977,15 @@ async function iniciar() {
   $('#btn-generar').addEventListener('click', () => generar(true));
 
   $('#btn-ajustes').addEventListener('click', abrirAjustes);
+  document.querySelectorAll('#ajuste-genero button').forEach((b) => b.addEventListener('click', () => {
+    elegirGenero(b.dataset.genero);
+    toast(`Mostrando contenido de: ${NOMBRE_GENERO[b.dataset.genero]}`);
+  }));
+  document.querySelectorAll('#dlg-bienvenida [data-genero]').forEach((b) => b.addEventListener('click', () => {
+    elegirGenero(b.dataset.genero);
+    $('#dlg-bienvenida').close();
+    toast('Listo. Puedes cambiarlo en Ajustes (⚙)');
+  }));
   document.querySelectorAll('dialog [data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
   cerrarAlTocarFondo($('#dlg-editar'));
   cerrarAlTocarFondo($('#dlg-ajustes'));
@@ -977,6 +1015,7 @@ async function iniciar() {
   try { await recargarDatos(); } catch (e) { console.error(e); toast('No se pudo abrir la base de datos'); }
   ruta();
   db.requestPersistence();
+  preguntarGeneroSiHaceFalta();
 
   registrarServiceWorker();
 }

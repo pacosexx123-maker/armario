@@ -17,8 +17,8 @@
 <body>
   <header class="topbar">
     <h1 id="page-title">Mi armario</h1>
-    <button id="btn-ajustes" class="icon-btn" type="button" aria-label="Copia de seguridad">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+    <button id="btn-ajustes" class="icon-btn" type="button" aria-label="Ajustes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
     </button>
   </header>
 
@@ -121,13 +121,22 @@
   <dialog id="dlg-look" class="sheet" aria-label="Look de inspiración"></dialog>
   <dialog id="dlg-nuevo-look" class="sheet" aria-label="Añadir look desde foto"></dialog>
 
-  <dialog id="dlg-ajustes" class="sheet" aria-label="Copia de seguridad">
+  <dialog id="dlg-ajustes" class="sheet" aria-label="Ajustes">
     <div class="sheet-head">
-      <h2>Copia de seguridad</h2>
+      <h2>Ajustes</h2>
       <button type="button" class="icon-btn" data-close aria-label="Cerrar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
+    <h3 class="sub-title">Mostrar contenido de</h3>
+    <div class="segmented tres" id="ajuste-genero" role="radiogroup" aria-label="Mostrar contenido de">
+      <button type="button" role="radio" data-genero="mujer">Mujer</button>
+      <button type="button" role="radio" data-genero="hombre">Hombre</button>
+      <button type="button" role="radio" data-genero="ambos">Ambos</button>
+    </div>
+    <p class="muted small">Afecta a los looks de Inspiración y al catálogo de básicos. Tu armario y los outfits siempre usan tus prendas.</p>
+
+    <h3 class="sub-title">Copia de seguridad</h3>
     <p class="muted">Guarda todo tu armario (con las fotos) en un archivo. Si reinstalas la app, impórtalo para recuperarlo.</p>
     <button type="button" id="btn-exportar" class="btn primary block">Exportar armario</button>
     <label class="btn block">
@@ -135,6 +144,17 @@
       Importar copia
     </label>
     <p id="info-almacen" class="muted small"></p>
+  </dialog>
+
+  <!-- Primera vez: elegir qué contenido mostrar -->
+  <dialog id="dlg-bienvenida" class="sheet bienvenida" aria-label="Elige qué contenido ver">
+    <h2>¿Qué contenido quieres ver?</h2>
+    <p class="muted">Lo usamos para los looks de inspiración y el catálogo de básicos. Puedes cambiarlo cuando quieras en Ajustes.</p>
+    <div class="bienvenida-opciones">
+      <button type="button" class="big-btn secondary" data-genero="mujer"><span>Mujer</span></button>
+      <button type="button" class="big-btn secondary" data-genero="hombre"><span>Hombre</span></button>
+      <button type="button" class="big-btn secondary" data-genero="ambos"><span>Ambos</span></button>
+    </div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

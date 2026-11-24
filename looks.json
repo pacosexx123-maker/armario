@@ -1,285 +1,342 @@
 {
   "version": 1,
   "looks": [
-    { "id": "traje-marino-clasico", "nombre": "Traje azul marino clásico", "estilo": "formal", "temporada": "todo el año", "huecos": [
+    { "id": "traje-marino-clasico", "nombre": "Traje azul marino clásico", "estilo": "formal", "temporada": "todo el año", "genero": "hombre", "huecos": [
       { "categoria": "chaqueta", "color": "#1d2741", "rol": "base" },
       { "categoria": "pantalon", "color": "#1d2741", "rol": "base" },
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "zapatos", "color": "#5e3f2a", "rol": "acento" }
     ] },
-    { "id": "traje-marengo-celeste", "nombre": "Traje gris marengo con camisa celeste", "estilo": "formal", "temporada": "todo el año", "huecos": [
+    { "id": "traje-marengo-celeste", "nombre": "Traje gris marengo con camisa celeste", "estilo": "formal", "temporada": "todo el año", "genero": "hombre", "huecos": [
       { "categoria": "chaqueta", "color": "#3c3f44", "rol": "base" },
       { "categoria": "pantalon", "color": "#3c3f44", "rol": "base" },
       { "categoria": "camisa", "color": "#a9c9e8", "rol": "acento" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "total-black-noche", "nombre": "Total black de noche", "estilo": "formal", "temporada": "todo el año", "huecos": [
+    { "id": "total-black-noche", "nombre": "Total black de noche", "estilo": "formal", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "chaqueta", "color": "#161616", "rol": "base" },
       { "categoria": "camisa", "color": "#161616", "rol": "base" },
       { "categoria": "pantalon", "color": "#161616", "rol": "base" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "vestido-negro-abrigo-camel", "nombre": "Vestido negro con abrigo camel", "estilo": "formal", "temporada": "invierno", "huecos": [
+    { "id": "vestido-negro-abrigo-camel", "nombre": "Vestido negro con abrigo camel", "estilo": "formal", "temporada": "invierno", "genero": "mujer", "huecos": [
       { "categoria": "vestido", "color": "#161616", "rol": "base" },
       { "categoria": "abrigo", "color": "#b88658", "rol": "acento" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" },
       { "categoria": "bolso", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "vestido-burdeos-invitada", "nombre": "Vestido burdeos de invitada", "estilo": "formal", "temporada": "todo el año", "huecos": [
+    { "id": "vestido-burdeos-invitada", "nombre": "Vestido burdeos de invitada", "estilo": "formal", "temporada": "todo el año", "genero": "mujer", "huecos": [
       { "categoria": "vestido", "color": "#6c1d2a", "rol": "base" },
       { "categoria": "zapatos", "color": "#d4bf9f", "rol": "neutro" },
       { "categoria": "bolso", "color": "#d4bf9f", "rol": "neutro" }
     ] },
-    { "id": "falda-lapiz-gris", "nombre": "Falda lápiz gris y camisa blanca", "estilo": "formal", "temporada": "todo el año", "huecos": [
+    { "id": "falda-lapiz-gris", "nombre": "Falda lápiz gris y camisa blanca", "estilo": "formal", "temporada": "todo el año", "genero": "mujer", "huecos": [
       { "categoria": "falda", "color": "#8a8d91", "rol": "base" },
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "chaqueta", "color": "#8a8d91", "rol": "base" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "traje-beige-verano", "nombre": "Traje beige de verano", "estilo": "formal", "temporada": "verano", "huecos": [
+    { "id": "traje-beige-verano", "nombre": "Traje beige de verano", "estilo": "formal", "temporada": "verano", "genero": "hombre", "huecos": [
       { "categoria": "chaqueta", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "pantalon", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "zapatos", "color": "#5e3f2a", "rol": "acento" }
     ] },
-    { "id": "americana-negra-pantalon-blanco", "nombre": "Americana negra con pantalón blanco", "estilo": "formal", "temporada": "verano", "huecos": [
+    { "id": "americana-negra-pantalon-blanco", "nombre": "Americana negra con pantalón blanco", "estilo": "formal", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "chaqueta", "color": "#161616", "rol": "base" },
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "pantalon", "color": "#f5f5f3", "rol": "base" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "abrigo-gris-traje-marino", "nombre": "Abrigo gris sobre traje marino", "estilo": "formal", "temporada": "invierno", "huecos": [
+    { "id": "abrigo-gris-traje-marino", "nombre": "Abrigo gris sobre traje marino", "estilo": "formal", "temporada": "invierno", "genero": "hombre", "huecos": [
       { "categoria": "abrigo", "color": "#8a8d91", "rol": "base" },
       { "categoria": "chaqueta", "color": "#1d2741", "rol": "base" },
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "pantalon", "color": "#1d2741", "rol": "base" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "jersey-fino-negro-gris", "nombre": "Jersey fino negro con pantalón gris", "estilo": "formal", "temporada": "invierno", "huecos": [
+    { "id": "jersey-fino-negro-gris", "nombre": "Jersey fino negro con pantalón gris", "estilo": "formal", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#161616", "rol": "base" },
       { "categoria": "pantalon", "color": "#8a8d91", "rol": "base" },
       { "categoria": "abrigo", "color": "#1d2741", "rol": "neutro" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "vestido-azul-noche", "nombre": "Vestido azul noche con zapatos plata", "estilo": "formal", "temporada": "todo el año", "huecos": [
+    { "id": "vestido-azul-noche", "nombre": "Vestido azul noche con zapatos plata", "estilo": "formal", "temporada": "todo el año", "genero": "mujer", "huecos": [
       { "categoria": "vestido", "color": "#22305a", "rol": "base" },
       { "categoria": "zapatos", "color": "#c8cacc", "rol": "acento" },
       { "categoria": "bolso", "color": "#c8cacc", "rol": "acento" }
     ] },
 
-    { "id": "americana-marino-vaqueros", "nombre": "Americana marino con vaqueros", "estilo": "arreglado", "temporada": "todo el año", "huecos": [
+    { "id": "americana-marino-vaqueros", "nombre": "Americana marino con vaqueros", "estilo": "arreglado", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "chaqueta", "color": "#1d2741", "rol": "base" },
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "vaqueros", "color": "#4d6b8e", "rol": "base" },
       { "categoria": "zapatos", "color": "#5e3f2a", "rol": "acento" }
     ] },
-    { "id": "total-beige-acento-negro", "nombre": "Total look beige con acento negro", "estilo": "arreglado", "temporada": "todo el año", "huecos": [
+    { "id": "total-beige-acento-negro", "nombre": "Total look beige con acento negro", "estilo": "arreglado", "temporada": "todo el año", "genero": "mujer", "huecos": [
       { "categoria": "jersey", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "pantalon", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "zapatos", "color": "#161616", "rol": "acento" },
       { "categoria": "bolso", "color": "#161616", "rol": "acento" }
     ] },
-    { "id": "oxford-celeste-chinos", "nombre": "Camisa oxford celeste y chinos beige", "estilo": "arreglado", "temporada": "todo el año", "huecos": [
+    { "id": "oxford-celeste-chinos", "nombre": "Camisa oxford celeste y chinos beige", "estilo": "arreglado", "temporada": "todo el año", "genero": "hombre", "huecos": [
       { "categoria": "camisa", "color": "#94c3e8", "rol": "acento" },
       { "categoria": "pantalon", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "zapatos", "color": "#5e3f2a", "rol": "neutro" },
       { "categoria": "cinturon", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "jersey-camel-pantalon-gris", "nombre": "Jersey camel con pantalón gris", "estilo": "arreglado", "temporada": "invierno", "huecos": [
+    { "id": "jersey-camel-pantalon-gris", "nombre": "Jersey camel con pantalón gris", "estilo": "arreglado", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#b88658", "rol": "base" },
       { "categoria": "pantalon", "color": "#8a8d91", "rol": "base" },
       { "categoria": "botas", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "cuello-alto-negro-americana-camel", "nombre": "Cuello alto negro con americana camel", "estilo": "arreglado", "temporada": "invierno", "huecos": [
+    { "id": "cuello-alto-negro-americana-camel", "nombre": "Cuello alto negro con americana camel", "estilo": "arreglado", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#161616", "rol": "base" },
       { "categoria": "chaqueta", "color": "#b88658", "rol": "acento" },
       { "categoria": "pantalon", "color": "#161616", "rol": "base" },
       { "categoria": "botas", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "falda-mostaza-jersey-crudo", "nombre": "Falda midi mostaza y jersey crudo", "estilo": "arreglado", "temporada": "invierno", "huecos": [
+    { "id": "falda-mostaza-jersey-crudo", "nombre": "Falda midi mostaza y jersey crudo", "estilo": "arreglado", "temporada": "invierno", "genero": "mujer", "huecos": [
       { "categoria": "falda", "color": "#c8991c", "rol": "acento" },
       { "categoria": "jersey", "color": "#ebe3d2", "rol": "neutro" },
       { "categoria": "botas", "color": "#5e3f2a", "rol": "neutro" },
       { "categoria": "bolso", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "vestido-camisero-celeste", "nombre": "Vestido camisero celeste", "estilo": "arreglado", "temporada": "verano", "huecos": [
+    { "id": "vestido-camisero-celeste", "nombre": "Vestido camisero celeste", "estilo": "arreglado", "temporada": "verano", "genero": "mujer", "huecos": [
       { "categoria": "vestido", "color": "#94c3e8", "rol": "base" },
       { "categoria": "zapatos", "color": "#b88658", "rol": "neutro" },
       { "categoria": "cinturon", "color": "#b88658", "rol": "neutro" }
     ] },
-    { "id": "total-crudo-verano", "nombre": "Total look crudo de verano", "estilo": "arreglado", "temporada": "verano", "huecos": [
+    { "id": "total-crudo-verano", "nombre": "Total look crudo de verano", "estilo": "arreglado", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "camisa", "color": "#ebe3d2", "rol": "base" },
       { "categoria": "pantalon", "color": "#ebe3d2", "rol": "base" },
       { "categoria": "zapatos", "color": "#b88658", "rol": "acento" }
     ] },
-    { "id": "sobrecamisa-oliva-crudo", "nombre": "Sobrecamisa verde oliva con crudo", "estilo": "arreglado", "temporada": "todo el año", "huecos": [
+    { "id": "sobrecamisa-oliva-crudo", "nombre": "Sobrecamisa verde oliva con crudo", "estilo": "arreglado", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "chaqueta", "color": "#6b6b3a", "rol": "acento" },
       { "categoria": "camiseta", "color": "#ebe3d2", "rol": "neutro" },
       { "categoria": "pantalon", "color": "#ebe3d2", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "jersey-burdeos-marengo", "nombre": "Jersey burdeos con pantalón marengo", "estilo": "arreglado", "temporada": "invierno", "huecos": [
+    { "id": "jersey-burdeos-marengo", "nombre": "Jersey burdeos con pantalón marengo", "estilo": "arreglado", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#6c1d2a", "rol": "acento" },
       { "categoria": "pantalon", "color": "#3c3f44", "rol": "base" },
       { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "gabardina-vaqueros", "nombre": "Gabardina beige, camiseta blanca y vaqueros", "estilo": "arreglado", "temporada": "todo el año", "huecos": [
+    { "id": "gabardina-vaqueros", "nombre": "Gabardina beige, camiseta blanca y vaqueros", "estilo": "arreglado", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "abrigo", "color": "#c9ad84", "rol": "base" },
       { "categoria": "camiseta", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "vaqueros", "color": "#4d6b8e", "rol": "base" },
       { "categoria": "botas", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "rosa-palo-gris-claro", "nombre": "Camisa rosa palo y pantalón gris claro", "estilo": "arreglado", "temporada": "verano", "huecos": [
+    { "id": "rosa-palo-gris-claro", "nombre": "Camisa rosa palo y pantalón gris claro", "estilo": "arreglado", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "camisa", "color": "#e2bcbb", "rol": "acento" },
       { "categoria": "pantalon", "color": "#c8cacc", "rol": "base" },
       { "categoria": "zapatos", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "monocromo-azules", "nombre": "Monocromo en azules", "estilo": "arreglado", "temporada": "todo el año", "huecos": [
+    { "id": "monocromo-azules", "nombre": "Monocromo en azules", "estilo": "arreglado", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "camisa", "color": "#94c3e8", "rol": "acento" },
       { "categoria": "jersey", "color": "#2c5db4", "rol": "acento" },
       { "categoria": "pantalon", "color": "#1d2741", "rol": "base" },
       { "categoria": "zapatos", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "marron-crema", "nombre": "Marrón chocolate y crema", "estilo": "arreglado", "temporada": "invierno", "huecos": [
+    { "id": "marron-crema", "nombre": "Marrón chocolate y crema", "estilo": "arreglado", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#ebe3d2", "rol": "neutro" },
       { "categoria": "pantalon", "color": "#5e3f2a", "rol": "base" },
       { "categoria": "botas", "color": "#3b2a1e", "rol": "neutro" },
       { "categoria": "bufanda", "color": "#ebe3d2", "rol": "neutro" }
     ] },
 
-    { "id": "camiseta-blanca-vaqueros", "nombre": "El básico: camiseta blanca y vaqueros", "estilo": "informal", "temporada": "todo el año", "huecos": [
+    { "id": "camiseta-blanca-vaqueros", "nombre": "El básico: camiseta blanca y vaqueros", "estilo": "informal", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "camiseta", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "vaqueros", "color": "#4d6b8e", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "sudadera-gris-vaquero-negro", "nombre": "Sudadera gris con vaqueros negros", "estilo": "informal", "temporada": "todo el año", "huecos": [
+    { "id": "sudadera-gris-vaquero-negro", "nombre": "Sudadera gris con vaqueros negros", "estilo": "informal", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#8a8d91", "rol": "base" },
       { "categoria": "vaqueros", "color": "#1e1e1e", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "cazadora-vaquera-negro", "nombre": "Cazadora vaquera sobre negro", "estilo": "informal", "temporada": "todo el año", "huecos": [
+    { "id": "cazadora-vaquera-negro", "nombre": "Cazadora vaquera sobre negro", "estilo": "informal", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "chaqueta", "color": "#4d6b8e", "rol": "acento" },
       { "categoria": "camiseta", "color": "#161616", "rol": "base" },
       { "categoria": "vaqueros", "color": "#1e1e1e", "rol": "base" },
       { "categoria": "botas", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "camiseta-marino-chinos", "nombre": "Camiseta azul marino y chinos beige", "estilo": "informal", "temporada": "verano", "huecos": [
+    { "id": "camiseta-marino-chinos", "nombre": "Camiseta azul marino y chinos beige", "estilo": "informal", "temporada": "verano", "genero": "hombre", "huecos": [
       { "categoria": "camiseta", "color": "#1d2741", "rol": "base" },
       { "categoria": "pantalon", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "lino-blanco-shorts", "nombre": "Camisa de lino blanca y shorts beige", "estilo": "informal", "temporada": "verano", "huecos": [
+    { "id": "lino-blanco-shorts", "nombre": "Camisa de lino blanca y shorts beige", "estilo": "informal", "temporada": "verano", "genero": "hombre", "huecos": [
       { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "shorts", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "zapatos", "color": "#b88658", "rol": "acento" }
     ] },
-    { "id": "vestido-amarillo-verano", "nombre": "Vestido amarillo con zapatillas blancas", "estilo": "informal", "temporada": "verano", "huecos": [
+    { "id": "vestido-amarillo-verano", "nombre": "Vestido amarillo con zapatillas blancas", "estilo": "informal", "temporada": "verano", "genero": "mujer", "huecos": [
       { "categoria": "vestido", "color": "#f2d23a", "rol": "acento" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "bolso", "color": "#d4bf9f", "rol": "neutro" }
     ] },
-    { "id": "falda-vaquera-blanco", "nombre": "Falda vaquera y camiseta blanca", "estilo": "informal", "temporada": "verano", "huecos": [
+    { "id": "falda-vaquera-blanco", "nombre": "Falda vaquera y camiseta blanca", "estilo": "informal", "temporada": "verano", "genero": "mujer", "huecos": [
       { "categoria": "falda", "color": "#4d6b8e", "rol": "base" },
       { "categoria": "camiseta", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "jersey-verde-botella", "nombre": "Jersey verde botella con vaqueros", "estilo": "informal", "temporada": "invierno", "huecos": [
+    { "id": "jersey-verde-botella", "nombre": "Jersey verde botella con vaqueros", "estilo": "informal", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#1e4631", "rol": "acento" },
       { "categoria": "vaqueros", "color": "#4d6b8e", "rol": "base" },
       { "categoria": "botas", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "parka-caqui-sudadera", "nombre": "Parka caqui con sudadera gris", "estilo": "informal", "temporada": "invierno", "huecos": [
+    { "id": "parka-caqui-sudadera", "nombre": "Parka caqui con sudadera gris", "estilo": "informal", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "abrigo", "color": "#6b6b3a", "rol": "acento" },
       { "categoria": "sudadera", "color": "#8a8d91", "rol": "base" },
       { "categoria": "vaqueros", "color": "#2f3e55", "rol": "base" },
       { "categoria": "zapatillas", "color": "#161616", "rol": "neutro" },
       { "categoria": "gorro", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "camisa-roja-vaqueros", "nombre": "Camisa roja de cuadros con vaqueros", "estilo": "informal", "temporada": "invierno", "huecos": [
+    { "id": "camisa-roja-vaqueros", "nombre": "Camisa roja de cuadros con vaqueros", "estilo": "informal", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "camisa", "color": "#b3302f", "rol": "acento" },
       { "categoria": "camiseta", "color": "#161616", "rol": "neutro" },
       { "categoria": "vaqueros", "color": "#4d6b8e", "rol": "base" },
       { "categoria": "botas", "color": "#5e3f2a", "rol": "neutro" }
     ] },
-    { "id": "jersey-mostaza-marino", "nombre": "Jersey mostaza con pantalón marino", "estilo": "informal", "temporada": "invierno", "huecos": [
+    { "id": "jersey-mostaza-marino", "nombre": "Jersey mostaza con pantalón marino", "estilo": "informal", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "jersey", "color": "#c8991c", "rol": "acento" },
       { "categoria": "pantalon", "color": "#1d2741", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "doble-vaquero", "nombre": "Doble vaquero claro y oscuro", "estilo": "informal", "temporada": "todo el año", "huecos": [
+    { "id": "doble-vaquero", "nombre": "Doble vaquero claro y oscuro", "estilo": "informal", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "camisa", "color": "#8aa6c4", "rol": "base" },
       { "categoria": "vaqueros", "color": "#2f4a6d", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "sudadera-terracota-crudo", "nombre": "Sudadera terracota y pantalón crudo", "estilo": "informal", "temporada": "todo el año", "huecos": [
+    { "id": "sudadera-terracota-crudo", "nombre": "Sudadera terracota y pantalón crudo", "estilo": "informal", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#b5562f", "rol": "acento" },
       { "categoria": "pantalon", "color": "#ebe3d2", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "jersey-rosa-vaquero-claro", "nombre": "Jersey rosa y vaqueros claros", "estilo": "informal", "temporada": "todo el año", "huecos": [
+    { "id": "jersey-rosa-vaquero-claro", "nombre": "Jersey rosa y vaqueros claros", "estilo": "informal", "temporada": "todo el año", "genero": "mujer", "huecos": [
       { "categoria": "jersey", "color": "#f0a2b7", "rol": "acento" },
       { "categoria": "vaqueros", "color": "#8aa6c4", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "camiseta-lila-blanco", "nombre": "Camiseta lila y pantalón blanco", "estilo": "informal", "temporada": "verano", "huecos": [
+    { "id": "camiseta-lila-blanco", "nombre": "Camiseta lila y pantalón blanco", "estilo": "informal", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "camiseta", "color": "#b6a0d8", "rol": "acento" },
       { "categoria": "pantalon", "color": "#f5f5f3", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
 
-    { "id": "chandal-negro-completo", "nombre": "Chándal negro completo", "estilo": "deportivo", "temporada": "todo el año", "huecos": [
+    { "id": "chandal-negro-completo", "nombre": "Chándal negro completo", "estilo": "deportivo", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#161616", "rol": "base" },
       { "categoria": "chandal", "color": "#161616", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "gris-melange", "nombre": "Conjunto gris jaspeado", "estilo": "deportivo", "temporada": "todo el año", "huecos": [
+    { "id": "gris-melange", "nombre": "Conjunto gris jaspeado", "estilo": "deportivo", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#9a9ca0", "rol": "base" },
       { "categoria": "chandal", "color": "#9a9ca0", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "running-verano", "nombre": "Running de verano en azul", "estilo": "deportivo", "temporada": "verano", "huecos": [
+    { "id": "running-verano", "nombre": "Running de verano en azul", "estilo": "deportivo", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "camiseta", "color": "#2c5db4", "rol": "acento" },
       { "categoria": "shorts", "color": "#161616", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "marino-blanco-deporte", "nombre": "Azul marino y blanco", "estilo": "deportivo", "temporada": "todo el año", "huecos": [
+    { "id": "marino-blanco-deporte", "nombre": "Azul marino y blanco", "estilo": "deportivo", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#1d2741", "rol": "base" },
       { "categoria": "camiseta", "color": "#f5f5f3", "rol": "neutro" },
       { "categoria": "chandal", "color": "#1d2741", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "sudadera-roja", "nombre": "Toque de color: sudadera roja", "estilo": "deportivo", "temporada": "todo el año", "huecos": [
+    { "id": "sudadera-roja", "nombre": "Toque de color: sudadera roja", "estilo": "deportivo", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#c3282b", "rol": "acento" },
       { "categoria": "chandal", "color": "#161616", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "gimnasio-gris-negro", "nombre": "Gimnasio: camiseta gris y shorts negros", "estilo": "deportivo", "temporada": "verano", "huecos": [
+    { "id": "gimnasio-gris-negro", "nombre": "Gimnasio: camiseta gris y shorts negros", "estilo": "deportivo", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "camiseta", "color": "#8a8d91", "rol": "base" },
       { "categoria": "shorts", "color": "#161616", "rol": "base" },
       { "categoria": "zapatillas", "color": "#161616", "rol": "neutro" }
     ] },
-    { "id": "athleisure-beige", "nombre": "Athleisure en beige", "estilo": "deportivo", "temporada": "todo el año", "huecos": [
+    { "id": "athleisure-beige", "nombre": "Athleisure en beige", "estilo": "deportivo", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "chandal", "color": "#d4bf9f", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "cortavientos-verde", "nombre": "Cortavientos verde y chándal negro", "estilo": "deportivo", "temporada": "todo el año", "huecos": [
+    { "id": "cortavientos-verde", "nombre": "Cortavientos verde y chándal negro", "estilo": "deportivo", "temporada": "todo el año", "genero": "unisex", "huecos": [
       { "categoria": "chaqueta", "color": "#2e8b4e", "rol": "acento" },
       { "categoria": "camiseta", "color": "#161616", "rol": "neutro" },
       { "categoria": "chandal", "color": "#161616", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "sudadera-celeste-shorts", "nombre": "Sudadera celeste y shorts grises", "estilo": "deportivo", "temporada": "verano", "huecos": [
+    { "id": "sudadera-celeste-shorts", "nombre": "Sudadera celeste y shorts grises", "estilo": "deportivo", "temporada": "verano", "genero": "unisex", "huecos": [
       { "categoria": "sudadera", "color": "#94c3e8", "rol": "acento" },
       { "categoria": "shorts", "color": "#8a8d91", "rol": "base" },
       { "categoria": "zapatillas", "color": "#f5f5f3", "rol": "neutro" }
     ] },
-    { "id": "plumas-negro-invierno", "nombre": "Plumas negro y chándal gris", "estilo": "deportivo", "temporada": "invierno", "huecos": [
+    { "id": "plumas-negro-invierno", "nombre": "Plumas negro y chándal gris", "estilo": "deportivo", "temporada": "invierno", "genero": "unisex", "huecos": [
       { "categoria": "abrigo", "color": "#161616", "rol": "base" },
       { "categoria": "sudadera", "color": "#8a8d91", "rol": "base" },
       { "categoria": "chandal", "color": "#3c3f44", "rol": "base" },
       { "categoria": "zapatillas", "color": "#161616", "rol": "neutro" },
       { "categoria": "gorro", "color": "#8a8d91", "rol": "neutro" }
+    ] },
+
+    { "id": "falda-midi-negra-camisa-blanca", "nombre": "Falda midi negra y camisa blanca", "estilo": "arreglado", "temporada": "todo el año", "genero": "mujer", "huecos": [
+      { "categoria": "falda", "color": "#161616", "rol": "base" },
+      { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
+      { "categoria": "zapatos", "color": "#161616", "rol": "neutro" },
+      { "categoria": "bolso", "color": "#b88658", "rol": "acento" }
+    ] },
+    { "id": "vestido-rojo-sandalias", "nombre": "Vestido rojo con sandalias", "estilo": "arreglado", "temporada": "verano", "genero": "mujer", "huecos": [
+      { "categoria": "vestido", "color": "#c3282b", "rol": "acento" },
+      { "categoria": "sandalias", "color": "#d4bf9f", "rol": "neutro" },
+      { "categoria": "bolso", "color": "#d4bf9f", "rol": "neutro" }
+    ] },
+    { "id": "vestido-camel-botas", "nombre": "Vestido de punto camel con botas", "estilo": "informal", "temporada": "invierno", "genero": "mujer", "huecos": [
+      { "categoria": "vestido", "color": "#b88658", "rol": "base" },
+      { "categoria": "botas", "color": "#3b2a1e", "rol": "neutro" },
+      { "categoria": "abrigo", "color": "#ebe3d2", "rol": "neutro" }
+    ] },
+    { "id": "falda-lapiz-negra-jersey-camel", "nombre": "Falda lápiz negra y jersey camel", "estilo": "arreglado", "temporada": "invierno", "genero": "mujer", "huecos": [
+      { "categoria": "falda", "color": "#161616", "rol": "base" },
+      { "categoria": "jersey", "color": "#b88658", "rol": "acento" },
+      { "categoria": "botas", "color": "#161616", "rol": "neutro" }
+    ] },
+    { "id": "vestido-verde-botella-noche", "nombre": "Vestido verde botella de noche", "estilo": "formal", "temporada": "todo el año", "genero": "mujer", "huecos": [
+      { "categoria": "vestido", "color": "#1e4631", "rol": "base" },
+      { "categoria": "zapatos", "color": "#161616", "rol": "neutro" },
+      { "categoria": "bolso", "color": "#c8cacc", "rol": "acento" }
+    ] },
+    { "id": "polo-marino-chinos", "nombre": "Polo azul marino con chinos y mocasines", "estilo": "arreglado", "temporada": "verano", "genero": "hombre", "huecos": [
+      { "categoria": "camiseta", "color": "#1d2741", "rol": "base" },
+      { "categoria": "pantalon", "color": "#d4bf9f", "rol": "base" },
+      { "categoria": "zapatos", "color": "#5e3f2a", "rol": "neutro" },
+      { "categoria": "cinturon", "color": "#5e3f2a", "rol": "neutro" }
+    ] },
+    { "id": "traje-gris-claro-verano", "nombre": "Traje gris claro con camisa celeste", "estilo": "formal", "temporada": "verano", "genero": "hombre", "huecos": [
+      { "categoria": "chaqueta", "color": "#c8cacc", "rol": "base" },
+      { "categoria": "pantalon", "color": "#c8cacc", "rol": "base" },
+      { "categoria": "camisa", "color": "#a9cfee", "rol": "acento" },
+      { "categoria": "zapatos", "color": "#5e3f2a", "rol": "neutro" }
+    ] },
+    { "id": "americana-marron-gris", "nombre": "Americana marrón con pantalón marengo", "estilo": "arreglado", "temporada": "invierno", "genero": "hombre", "huecos": [
+      { "categoria": "chaqueta", "color": "#74492c", "rol": "base" },
+      { "categoria": "jersey", "color": "#ebe3d2", "rol": "neutro" },
+      { "categoria": "pantalon", "color": "#3c3f44", "rol": "base" },
+      { "categoria": "botas", "color": "#3b2a1e", "rol": "neutro" }
+    ] },
+    { "id": "camisa-blanca-pantalon-marino", "nombre": "Camisa blanca, pantalón marino y mocasines", "estilo": "arreglado", "temporada": "todo el año", "genero": "hombre", "huecos": [
+      { "categoria": "camisa", "color": "#f5f5f3", "rol": "neutro" },
+      { "categoria": "pantalon", "color": "#1d2741", "rol": "base" },
+      { "categoria": "zapatos", "color": "#5e3f2a", "rol": "acento" },
+      { "categoria": "cinturon", "color": "#5e3f2a", "rol": "neutro" }
+    ] },
+    { "id": "abrigo-camel-jersey-marino", "nombre": "Abrigo camel sobre jersey marino", "estilo": "arreglado", "temporada": "invierno", "genero": "hombre", "huecos": [
+      { "categoria": "abrigo", "color": "#b88658", "rol": "acento" },
+      { "categoria": "jersey", "color": "#1d2741", "rol": "base" },
+      { "categoria": "pantalon", "color": "#43464b", "rol": "base" },
+      { "categoria": "zapatos", "color": "#161616", "rol": "neutro" }
     ] }
   ]
 }
