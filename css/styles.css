@@ -533,3 +533,11 @@ button.cmp-ref.foto { position: relative; display: block; width: 100%; padding: 
 
 /* Ningún campo por debajo de 16 px: así el móvil no hace zoom al tocarlo */
 input:not([type="checkbox"]):not([type="color"]):not([type="file"]), select, textarea { font-size: max(16px, 1em) !important; }
+
+/* ----- Filtros del armario ----- */
+.chip-n { margin-left: 6px; font-size: 12px; font-weight: 700; opacity: .55; }
+.chip[aria-pressed="true"] .chip-n { opacity: .8; }
+.contador-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.contador-fila p { margin: 8px 0; }
+.contador-fila .link-btn { padding: 0; font-weight: 600; color: var(--accent); }
+#armario-sin-resultados { margin: 4px 0 12px; }

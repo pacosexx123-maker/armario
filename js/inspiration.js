@@ -6,6 +6,7 @@ import { adaptarLook, describirHueco } from './matching.js';
 import { ilustrarLook, iconoPrenda } from './illustration.js';
 import { nombreCategoria } from './categories.js';
 import { ESTILOS_OUTFIT } from './outfits.js';
+import { abrirDialogo } from './nav.js';
 
 const TEMPORADAS = ['verano', 'invierno', 'todo el año'];
 const ROLES = { base: 'Base', acento: 'Acento', neutro: 'Neutro' };
@@ -113,7 +114,7 @@ function abrirLook(look) {
   elecciones = {};
   pintarDetalle();
   const dlg = $('#dlg-look');
-  if (!dlg.open) dlg.showModal();
+  if (!dlg.open) abrirDialogo(dlg); // «atrás» lo cierra
   dlg.scrollTop = 0;
 }
 

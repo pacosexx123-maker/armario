@@ -1,5 +1,7 @@
 // Utilidades de interfaz compartidas por todas las pantallas.
 
+import { abrirDialogo } from './nav.js';
+
 export const $ = (sel, root = document) => root.querySelector(sel);
 
 // Crea un elemento: h('div', { class: 'x', onclick: fn }, hijo1, 'texto', …)
@@ -67,7 +69,7 @@ export function mostrarColorGrande(hex, nombre = '', { onElegir = null } = {}) {
   dlg.addEventListener('click', (e) => { if (!onElegir || !e.target.closest('.cg-info')) dlg.close(); });
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);
-  dlg.showModal();
+  abrirDialogo(dlg); // «atrás» lo cierra
 }
 
 // Foto a pantalla completa con zoom de dos dedos (solo la foto; la app no se puede ampliar).
@@ -149,7 +151,7 @@ export function mostrarFotoGrande(src, alt = 'Foto') {
   cerrar.addEventListener('click', () => dlg.close());
   dlg.addEventListener('close', () => { window.removeEventListener('resize', medir); dlg.remove(); });
   document.body.append(dlg);
-  dlg.showModal();
+  abrirDialogo(dlg); // «atrás» lo cierra
   if (img.complete) medir();
   return dlg;
 }

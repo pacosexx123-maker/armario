@@ -2,6 +2,7 @@
 // Cada familia tiene sus tonos ordenados de claro a oscuro.
 
 import { h, mostrarColorGrande } from './ui.js';
+import { abrirDialogo } from './nav.js';
 import { describirColor, hexToLab } from './color.js';
 
 export const PALETA_FAMILIAS = [
@@ -93,7 +94,7 @@ function abrirTonosAmpliados(familia, actual, onElegir) {
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);
-  dlg.showModal();
+  abrirDialogo(dlg); // «atrás» la cierra
 }
 
 // Componente reutilizable: rejilla de muestras por familias.

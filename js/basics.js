@@ -35,7 +35,7 @@ export const BASICOS = [
   { id: 'zapatos-vestir',   nombre: 'Zapatos de vestir',               categoria: 'zapatos',    icono: 'zapatos',          estilos: ['formal'],            color: '#161616' },
   { id: 'botas',            nombre: 'Botas',                           categoria: 'botas',      icono: 'botas',            estilos: ['casual', 'formal'],  color: '#5e3f2a' },
   { id: 'botines',          nombre: 'Botines',                         categoria: 'botas',      icono: 'botines',          estilos: ['casual', 'formal'],  color: '#161616' },
-  { id: 'sandalias',        nombre: 'Sandalias',                       categoria: 'zapatos',    icono: 'sandalias',        estilos: ['casual'],            color: '#b88658' },
+  { id: 'sandalias',        nombre: 'Sandalias',                       categoria: 'sandalias',  icono: 'sandalias',        estilos: ['casual'],            color: '#b88658' },
 ];
 
 // Grupos para mostrar el catálogo (por la parte del outfit que ocupa cada categoría)
@@ -44,5 +44,5 @@ export const GRUPOS_BASICOS = [
   { nombre: 'Chaquetas y abrigos', categorias: ['chaqueta', 'abrigo'] },
   { nombre: 'Parte de abajo', categorias: ['pantalon', 'vaqueros', 'chandal', 'shorts', 'falda'] },
   { nombre: 'Vestidos', categorias: ['vestido'] },
-  { nombre: 'Calzado', categorias: ['zapatillas', 'zapatos', 'botas'] },
+  { nombre: 'Calzado', categorias: ['zapatillas', 'zapatos', 'botas', 'sandalias'] },
 ].map((g) => ({ ...g, basicos: BASICOS.filter((b) => g.categorias.includes(b.categoria)) }));

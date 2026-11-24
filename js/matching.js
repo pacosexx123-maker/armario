@@ -23,11 +23,12 @@ const PARES = tabla({
   'pantalon|vaqueros': 0.75, 'pantalon|chandal': 0.45, 'vaqueros|chandal': 0.35,
   'falda|shorts': 0.4,
   'zapatos|botas': 0.75, 'zapatos|zapatillas': 0.5, 'botas|zapatillas': 0.45,
+  'zapatos|sandalias': 0.5, 'zapatillas|sandalias': 0.4, 'botas|sandalias': 0.2,
 });
 
 // Ajustes según el estilo del look (p. ej. en deporte el chándal sustituye bien al pantalón)
 const AJUSTES = {
-  formal: tabla({ 'pantalon|vaqueros': 0.45, 'zapatos|zapatillas': 0.25, 'pantalon|chandal': 0.1, 'vaqueros|chandal': 0.1, 'camiseta|camisa': 0.5, 'camisa|sudadera': 0.2 }),
+  formal: tabla({ 'zapatos|sandalias': 0.3, 'pantalon|vaqueros': 0.45, 'zapatos|zapatillas': 0.25, 'pantalon|chandal': 0.1, 'vaqueros|chandal': 0.1, 'camiseta|camisa': 0.5, 'camisa|sudadera': 0.2 }),
   arreglado: tabla({ 'pantalon|chandal': 0.2, 'vaqueros|chandal': 0.2 }),
   informal: {},
   deportivo: tabla({ 'pantalon|chandal': 0.75, 'vaqueros|chandal': 0.55, 'zapatos|zapatillas': 0.3, 'botas|zapatillas': 0.3, 'camiseta|sudadera': 0.8, 'jersey|sudadera': 0.6 }),

@@ -28,8 +28,13 @@
       <div class="filters">
         <div id="filtro-categorias" class="chips scroll-x" role="group" aria-label="Filtrar por categoría"></div>
         <div id="filtro-colores" class="chips scroll-x" role="group" aria-label="Filtrar por color"></div>
+        <div id="filtro-estampados" class="chips scroll-x" role="group" aria-label="Filtrar por estampado"></div>
       </div>
-      <p id="contador" class="muted small"></p>
+      <div class="contador-fila">
+        <p id="contador" class="muted small"></p>
+        <button type="button" id="btn-quitar-filtros" class="link-btn" hidden>Quitar filtros</button>
+      </div>
+      <div id="armario-sin-resultados" class="notice" hidden>Ninguna prenda cumple estos filtros.</div>
       <div id="grid" class="grid"></div>
       <div id="armario-vacio" class="empty" hidden>
         <div class="empty-art" aria-hidden="true">

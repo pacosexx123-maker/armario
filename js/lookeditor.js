@@ -8,6 +8,7 @@ import { blobToCanvas, canvasToJpeg } from './image.js';
 import { colorEnPunto, describirColor, infoColor } from './color.js';
 import { CATEGORIAS, categoria as infoCategoria } from './categories.js';
 import { ESTILOS_OUTFIT } from './outfits.js';
+import { abrirDialogo, confirmarDescartar, cerrarConPregunta } from './nav.js';
 
 const COLORES_MARCA = ['#ff5a5f', '#2f9df4', '#ffbe0b', '#22c55e', '#a855f7', '#fb7c2b', '#14b8a6', '#ec4899', '#84cc16', '#6366f1'];
 const TEMPORADAS = [['todo el año', 'Todo el año'], ['verano', 'Verano'], ['invierno', 'Invierno']];
@@ -27,6 +28,7 @@ export async function abrirEditorLook({ look = null, onGuardado }) {
     modoColor: null,            // id del hueco que espera un toque en la foto
     detectando: false,
     cerrado: false,
+    cambios: false,             // hay algo sin guardar (foto, prendas, nombre…)
     fotoURL: null,
   };
 
@@ -35,7 +37,7 @@ export async function abrirEditorLook({ look = null, onGuardado }) {
   const cuerpo = h('div', { class: 'look-editor' });
   dlg.replaceChildren(
     h('div', { class: 'sheet-head' }, titulo,
-      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', html: ICONOS.cerrar, onclick: () => dlg.close() })),
+      h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', html: ICONOS.cerrar, onclick: () => cerrarConPregunta(dlg.capaNav) })),
     cuerpo);
   dlg.onclose = () => { st.cerrado = true; if (st.fotoURL) URL.revokeObjectURL(st.fotoURL); };
 
@@ -108,7 +110,7 @@ export async function abrirEditorLook({ look = null, onGuardado }) {
           h('label', { class: 'field' }, h('span', {}, 'Temporada'), selTemp))),
       h('div', { class: 'editor-actions' },
         h('button', { class: 'btn primary', type: 'button', onclick: guardar }, 'Guardar look'),
-        h('button', { class: 'btn', type: 'button', onclick: () => dlg.close() }, 'Cancelar')));
+        h('button', { class: 'btn', type: 'button', onclick: () => cerrarConPregunta(dlg.capaNav) }, 'Cancelar')));
     pintarLista();
     pintarPista();
     pintarOverlay();
@@ -183,6 +185,7 @@ export async function abrirEditorLook({ look = null, onGuardado }) {
     btnColor.title = 'Coger el color de la foto';
     const btnBorrar = botonIcono('icon-btn', 'papelera', '', () => {
       st.huecos = st.huecos.filter((x) => x !== hu);
+      st.cambios = true;
       if (st.modoColor === hu.id) st.modoColor = null;
       pintarLista(); pintarPista(); pintarOverlay();
     });
@@ -384,7 +387,12 @@ export async function abrirEditorLook({ look = null, onGuardado }) {
   /* ---------- Inicio ---------- */
   if (st.foto) await mostrarFoto();
   pintar();
-  if (!dlg.open) dlg.showModal();
+  // Cualquier cambio dentro del editor cuenta como «sin guardar»
+  cuerpo.addEventListener('input', () => { st.cambios = true; });
+  cuerpo.addEventListener('change', () => { st.cambios = true; });
+  wrapFoto.addEventListener('click', () => { st.cambios = true; });
+  // «atrás» cierra el editor, preguntando si hay cambios sin guardar
+  if (!dlg.open) abrirDialogo(dlg, { antesDeCerrar: () => !st.cambios || confirmarDescartar() });
   dlg.scrollTop = 0;
 }
 

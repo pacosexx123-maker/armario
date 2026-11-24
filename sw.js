@@ -1,7 +1,7 @@
 // Service worker de Armario: cachea la app para que funcione sin conexión.
 // Cambia VERSION cada vez que publiques cambios (además, los archivos de la
 // app se piden siempre primero a la red, así que los cambios llegan solos).
-const VERSION = 'armario-v11';
+const VERSION = 'armario-v12';
 const APP_CACHE = `${VERSION}-app`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const ESPERA_RED_MS = 4000; // con conexión lenta, usar la caché pasado este tiempo
@@ -24,6 +24,7 @@ const APP_SHELL = [
   './js/palette.js',
   './js/pattern.js',
   './js/basics.js',
+  './js/nav.js',
   './js/matching.js',
   './js/illustration.js',
   './js/inspiration.js',

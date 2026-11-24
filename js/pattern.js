@@ -9,6 +9,7 @@
 
 import { h, chip } from './ui.js';
 import { crearPaleta } from './palette.js';
+import { abrirCapa, cerrarCapa, capaAbierta } from './nav.js';
 import { hexToLab, rgbToLab, labToRgb, rgbToHex, deltaE2000, describirColor, corregirRGB, kmeans } from './color.js';
 
 export const TIPOS_ESTAMPADO = [
@@ -127,6 +128,17 @@ export function crearEditorEstampado({ base = '#cccccc', valor = null, onCambio 
   const nota = h('p', { class: 'est-nota', hidden: true });
   const paleta = crearPaleta({ onElegir: (hex) => { est.color2 = hex; cambio(); } });
   const panelPaleta = h('div', { class: 'est-paleta', hidden: true }, paleta.el);
+  // Abrir la paleta del estampado es un paso: «atrás» la cierra sin salir del editor
+  let capaPaleta = null;
+  const ocultarPaleta = () => {
+    panelPaleta.hidden = true;
+    const c = capaPaleta; capaPaleta = null;
+    if (c && capaAbierta(c)) cerrarCapa(c);
+  };
+  const mostrarPaleta = () => {
+    panelPaleta.hidden = false;
+    capaPaleta = abrirCapa({ cerrar: () => { capaPaleta = null; panelPaleta.hidden = true; pintar(); } });
+  };
 
   function filaChips(etiqueta, lista, actual, alElegir) {
     return h('div', { class: 'est-fila' },
@@ -156,7 +168,7 @@ export function crearEditorEstampado({ base = '#cccccc', valor = null, onCambio 
       const muestra = h('span', { class: 'est-c2', style: { background: est.color2 || 'transparent' } });
       const btnElegir = h('button', { class: 'btn mini', type: 'button', 'aria-expanded': String(!panelPaleta.hidden) },
         panelPaleta.hidden ? 'Elegir de la paleta' : 'Ocultar paleta');
-      btnElegir.addEventListener('click', () => { panelPaleta.hidden = !panelPaleta.hidden; pintar(); });
+      btnElegir.addEventListener('click', () => { if (panelPaleta.hidden) mostrarPaleta(); else ocultarPaleta(); pintar(); });
       filas.push(h('div', { class: 'est-fila' },
         h('span', { class: 'est-etiqueta' }, 'Color del estampado'),
         h('div', { class: 'est-color' },
@@ -165,7 +177,7 @@ export function crearEditorEstampado({ base = '#cccccc', valor = null, onCambio 
           btnElegir,
           est.color2 ? h('button', { class: 'link-btn', type: 'button', onclick: () => { est.color2 = null; cambio(); } }, 'Quitar') : null)));
     } else {
-      panelPaleta.hidden = true;
+      ocultarPaleta();
     }
     opciones.replaceChildren(...filas);
     paleta.marcar(est.color2);
@@ -187,7 +199,7 @@ export function crearEditorEstampado({ base = '#cccccc', valor = null, onCambio 
     setBase(hex) { colorBase = hex; pintarVista(); },
     setValor(v, textoNota = '') {
       est = normalizarEstampado(v);
-      panelPaleta.hidden = true;
+      ocultarPaleta();
       nota.textContent = textoNota;
       nota.hidden = !textoNota;
       pintar();

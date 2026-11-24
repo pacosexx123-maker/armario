@@ -2,26 +2,29 @@
 import * as db from './db.js';
 import { processPhoto, blobToCanvas } from './image.js';
 import { extraerColorDominante, colorEnPunto, describirColor, NOMBRES_COLOR, colorDeNombre } from './color.js';
-import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto } from './categories.js';
+import { CATEGORIAS, ESTILOS, nombreCategoria, estilosPorDefecto, categoria } from './categories.js';
+import { iniciarNavegacion, irATab, tabActual, abrirCapa, cerrarCapa, capaAbierta, atras, volverAlInicio, abrirDialogo, confirmarDescartar, cerrarConPregunta } from './nav.js';
 import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande, mostrarFotoGrande } from './ui.js';
 import { svgPrenda, svgADataURL } from './illustration.js';
 import { GRUPOS_BASICOS } from './basics.js';
 import { crearPaleta } from './palette.js';
-import { crearEditorEstampado, detectarEstampado, estampadoDe, normalizarEstampado, fondoEstampado, textoSugerencia } from './pattern.js';
+import { crearEditorEstampado, detectarEstampado, estampadoDe, normalizarEstampado, fondoEstampado, textoSugerencia, TIPOS_ESTAMPADO } from './pattern.js';
 import { iniciarInspiracion, renderInspiracion } from './inspiration.js';
 
 /* ---------- Estado ---------- */
 const estado = {
   prendas: [],
   favoritos: [],
-  filtroCat: null,
+  filtroCat: null,      // id de categoría o GRUPO_CALZADO
   filtroColor: null,
+  filtroEst: null,      // tipo de estampado
   estiloOutfit: leerPref('estiloOutfit', 'informal'),
   incluirAbrigo: leerPref('incluirAbrigo', 'false') === 'true',
   outfitActual: null,
 };
+const GRUPO_CALZADO = 'grupo:calzado';
 const urls = new Map(); // id de prenda → { firma, url } de su foto o de su ilustración
 
 // URL de la imagen de una prenda: su foto o, si no tiene (básico), su ilustración SVG
@@ -48,8 +51,13 @@ const nombrePrenda = (p) => p.nombre || nombreCategoria(p.categoria);
 async function recargarDatos() {
   const [prendas, favoritos] = await Promise.all([db.getAll('prendas'), db.getAll('outfits')]);
   // Las prendas antiguas, sin estampado, pasan a ser «liso» con su color como color de base
+  // Las sandalias creadas como básico cuando aún no existía su categoría pasan a «sandalias»
   estado.prendas = prendas
-    .map((p) => ({ ...p, estampado: estampadoDe(p) }))
+    .map((p) => ({
+      ...p,
+      estampado: estampadoDe(p),
+      ...(p.basico?.id === 'sandalias' && p.categoria === 'zapatos' ? { categoria: 'sandalias' } : {}),
+    }))
     .sort((a, b) => (b.creada || 0) - (a.creada || 0));
   estado.favoritos = favoritos.sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
   const ids = new Set(prendas.map((p) => p.id));
@@ -64,8 +72,8 @@ const VISTAS = {
   inspiracion: { titulo: 'Inspiración', render: () => renderInspiracion() },
 };
 
-function ruta() {
-  const nombre = (location.hash || '#armario').slice(1);
+// Muestra una pestaña (la llama nav.js: al cambiar de pestaña y al volver atrás)
+function ruta(nombre = tabActual()) {
   const vista = VISTAS[nombre] ? nombre : 'armario';
   for (const k of Object.keys(VISTAS)) $(`#view-${k}`).hidden = k !== vista;
   document.querySelectorAll('.tabbar a').forEach((a) => {
@@ -86,25 +94,52 @@ function renderArmario() {
   $('.filters').hidden = prendas.length === 0;
   $('#contador').hidden = prendas.length === 0;
 
-  // Filtros de categoría (solo las que existen)
-  const cats = CATEGORIAS.filter((c) => prendas.some((p) => p.categoria === c.id));
-  if (estado.filtroCat && !cats.some((c) => c.id === estado.filtroCat)) estado.filtroCat = null;
-  $('#filtro-categorias').replaceChildren(
-    chip('Todas', !estado.filtroCat, () => { estado.filtroCat = null; renderArmario(); }),
-    ...cats.map((c) => chip(c.nombre, estado.filtroCat === c.id, () => { estado.filtroCat = estado.filtroCat === c.id ? null : c.id; renderArmario(); }))
-  );
+  // Los tres filtros se combinan (p. ej. Camisas + azul + rayas)
+  const esCalzado = (p) => categoria(p.categoria)?.slot === 'calzado';
+  const pasaCat = (p, f) => !f || (f === GRUPO_CALZADO ? esCalzado(p) : p.categoria === f);
+  const pasaColor = (p, f) => !f || (p.color && p.color.nombre === f);
+  const pasaEst = (p, f) => !f || estampadoDe(p).tipo === f;
+  const alternar = (clave, valor) => { estado[clave] = estado[clave] === valor ? null : valor; renderArmario(); };
+  const conCuenta = (texto, n) => h('span', {}, texto, h('span', { class: 'chip-n' }, String(n)));
 
-  // Filtros de color (por nombre de color)
+  // Categorías: solo las que tengo, con su número; «Calzado» agrupa todo el calzado
+  const cuenta = (fn) => prendas.filter(fn).length;
+  const cats = CATEGORIAS.filter((c) => prendas.some((p) => p.categoria === c.id));
+  const nCalzado = cuenta(esCalzado);
+  if (estado.filtroCat && estado.filtroCat !== GRUPO_CALZADO && !cats.some((c) => c.id === estado.filtroCat)) estado.filtroCat = null;
+  if (estado.filtroCat === GRUPO_CALZADO && !nCalzado) estado.filtroCat = null;
+  const chipsCat = [chip(conCuenta('Todo', prendas.length), !estado.filtroCat, () => { estado.filtroCat = null; renderArmario(); })];
+  cats.forEach((c) => {
+    if (c.slot === 'calzado' && !chipsCat.grupo) {
+      chipsCat.grupo = true;
+      chipsCat.push(chip(conCuenta('Calzado', nCalzado), estado.filtroCat === GRUPO_CALZADO, () => alternar('filtroCat', GRUPO_CALZADO)));
+    }
+    chipsCat.push(chip(conCuenta(c.plural || c.nombre, cuenta((p) => p.categoria === c.id)), estado.filtroCat === c.id, () => alternar('filtroCat', c.id)));
+  });
+  $('#filtro-categorias').replaceChildren(...chipsCat);
+
+  // Colores (por nombre de color)
   const colores = NOMBRES_COLOR.filter((n) => prendas.some((p) => p.color && p.color.nombre === n));
   if (estado.filtroColor && !colores.includes(estado.filtroColor)) estado.filtroColor = null;
   $('#filtro-colores').replaceChildren(
     chip('Todos los colores', !estado.filtroColor, () => { estado.filtroColor = null; renderArmario(); }),
-    ...colores.map((n) => chip(n, estado.filtroColor === n, () => { estado.filtroColor = estado.filtroColor === n ? null : n; renderArmario(); }, colorDeNombre(n).hex))
-  );
+    ...colores.map((n) => chip(n, estado.filtroColor === n, () => alternar('filtroColor', n), colorDeNombre(n).hex)));
 
-  const visibles = prendas.filter((p) =>
-    (!estado.filtroCat || p.categoria === estado.filtroCat) &&
-    (!estado.filtroColor || (p.color && p.color.nombre === estado.filtroColor)));
+  // Estampados (solo los que tengo)
+  const tipos = TIPOS_ESTAMPADO.filter((t) => prendas.some((p) => estampadoDe(p).tipo === t.id));
+  if (estado.filtroEst && !tipos.some((t) => t.id === estado.filtroEst)) estado.filtroEst = null;
+  const filaEst = $('#filtro-estampados');
+  filaEst.hidden = tipos.length < 2 && !estado.filtroEst; // si todo es liso, no hace falta
+  filaEst.replaceChildren(
+    chip('Todos los estampados', !estado.filtroEst, () => { estado.filtroEst = null; renderArmario(); }),
+    ...tipos.map((t) => chip(conCuenta(t.id === 'otro' ? 'Otros' : t.nombre, cuenta((p) => estampadoDe(p).tipo === t.id)),
+      estado.filtroEst === t.id, () => alternar('filtroEst', t.id),
+      t.id === 'liso' ? null : fondoEstampado('#8a8d91', { tipo: t.id, color2: '#f5f5f3', tamano: t.id === 'topos' ? 'grandes' : undefined }, { dividido: false }))));
+
+  const visibles = prendas.filter((p) => pasaCat(p, estado.filtroCat) && pasaColor(p, estado.filtroColor) && pasaEst(p, estado.filtroEst));
+  const hayFiltros = !!(estado.filtroCat || estado.filtroColor || estado.filtroEst);
+  $('#btn-quitar-filtros').hidden = !hayFiltros;
+  $('#armario-sin-resultados').hidden = !(prendas.length && !visibles.length);
   $('#contador').textContent = visibles.length === prendas.length
     ? `${prendas.length} ${prendas.length === 1 ? 'prenda' : 'prendas'}`
     : `${visibles.length} de ${prendas.length} prendas`;
@@ -259,21 +294,34 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     paleta.el,
     h('label', { class: 'btn mini avanzado' }, 'Ajuste avanzado', inputColor));
   const btnPaleta = h('button', { class: 'btn', type: 'button', 'aria-expanded': String(paletaAbierta) }, 'Paleta');
+  // Abrir la paleta es un paso: «atrás» la cierra sin salir del editor
+  let capaPaleta = null;
+  const ocultarPaleta = () => { panelPaleta.hidden = true; btnPaleta.setAttribute('aria-expanded', 'false'); capaPaleta = null; };
   btnPaleta.addEventListener('click', () => {
-    panelPaleta.hidden = !panelPaleta.hidden;
-    btnPaleta.setAttribute('aria-expanded', String(!panelPaleta.hidden));
+    if (panelPaleta.hidden) {
+      panelPaleta.hidden = false;
+      btnPaleta.setAttribute('aria-expanded', 'true');
+      capaPaleta = abrirCapa({ cerrar: ocultarPaleta });
+    } else {
+      const c = capaPaleta;
+      ocultarPaleta();
+      if (c) cerrarCapa(c);
+    }
   });
 
   // «Sacar color de otra imagen» (p. ej. la foto de la tienda): solo para elegir el color, no se guarda
   const inputOtra = h('input', { type: 'file', accept: 'image/*', hidden: true });
   const btnOtra = h('label', { class: 'btn' }, inputOtra, 'Otra imagen');
   const panelOtra = h('div', { class: 'otra-imagen', hidden: true });
-  let otraURL = null, marcaOtra = null;
+  let otraURL = null, marcaOtra = null, capaOtra = null;
   const liberarOtra = () => {
     if (otraURL) URL.revokeObjectURL(otraURL);
     otraURL = null; marcaOtra = null;
     panelOtra.replaceChildren();
     panelOtra.hidden = true;
+    const c = capaOtra;
+    capaOtra = null;
+    if (c && capaAbierta(c)) cerrarCapa(c); // si se cierra con su botón, se quita del historial
   };
   inputOtra.addEventListener('change', async (e) => {
     const file = e.target.files && e.target.files[0];
@@ -297,6 +345,8 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
       h('div', { class: 'photo-wrap otra' }, imgOtra, marcaOtra,
         h('div', { class: 'photo-hint' }, 'Toca para coger el color de ese punto')));
     panelOtra.hidden = false;
+    // «atrás» cierra la imagen de referencia sin salir del editor
+    capaOtra = abrirCapa({ cerrar: () => { capaOtra = null; liberarOtra(); } });
   });
   const quitarMarcas = () => { marca.hidden = true; if (marcaOtra) marcaOtra.hidden = true; };
 
@@ -338,7 +388,9 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
   // La muestra enseña el estampado dibujado si la prenda no es lisa
   const pintarMuestra = () => { swatch.style.background = fondoEstampado(st.color.hex, st.estampado); pintarIlustracion(); };
 
+  let colorIniciado = false;
   function ponerColor(c, { desdeTeclado = false, auto = false } = {}) {
+    if (colorIniciado && !auto) st.sucio = true; // un color elegido a mano es un cambio
     st.color = { hex: c.hex, nombre: c.nombre };
     st.colorEsAuto = auto;
     pintarMuestra();
@@ -349,12 +401,13 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     if (editorEst) editorEst.setBase(c.hex);
   }
   ponerColor(st.color, { auto: st.colorEsAuto });
+  colorIniciado = true;
 
   // Estampado (editor reutilizable; el color de arriba es el color de base)
   editorEst = crearEditorEstampado({
     base: st.color.hex,
     valor: st.estampado,
-    onCambio: (v) => { st.estampado = v; st.estampadoTocado = true; pintarMuestra(); },
+    onCambio: (v) => { st.estampado = v; st.estampadoTocado = true; st.sucio = true; pintarMuestra(); },
   });
   if (notaEstampado) editorEst.setValor(st.estampado, notaEstampado);
 
@@ -475,7 +528,7 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     }
   });
   const acciones = h('div', { class: 'editor-actions' }, btnGuardar,
-    h('button', { class: 'btn', type: 'button', onclick: () => { destruir(); onCancelar && onCancelar(); } }, 'Cancelar'),
+    h('button', { class: 'btn', type: 'button', onclick: () => { if (onCancelar) onCancelar(); else destruir(); } }, 'Cancelar'),
     onBorrar ? h('button', { class: 'btn danger', type: 'button', onclick: () => onBorrar(destruir) }, 'Borrar prenda') : null);
 
   // Nombre (opcional; los básicos lo traen relleno)
@@ -539,7 +592,17 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     }
   }
 
-  return { el, setEstado, setClasificacion, destruir, get cerrado() { return st.cerrado; } };
+  // ¿Hay algo sin guardar? Al añadir con foto siempre (la foto se perdería); si no, cualquier cambio
+  // (abrir la paleta o elegir una imagen de referencia no cuenta como cambio)
+  el.addEventListener('input', (e) => { if (e.target.type !== 'file') st.sucio = true; });
+  el.addEventListener('change', (e) => { if (e.target.type !== 'file') st.sucio = true; });
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('.pal-tono, .chip, .est-editor .link-btn, .photo-wrap img')) st.sucio = true;
+  });
+  st.sucio = modo === 'nuevo' && !!blob;
+  const hayCambios = () => !st.cerrado && (st.sucio || st.fotoNueva);
+
+  return { el, setEstado, setClasificacion, destruir, hayCambios, get cerrado() { return st.cerrado; } };
 }
 
 /* ================= AÑADIR ================= */
@@ -590,14 +653,17 @@ async function alElegirFoto(e) {
       await db.put('prendas', { id: db.uid(), foto: blob, ...datos, creada: Date.now() });
       await recargarDatos();
       toast('Prenda guardada');
-      editorNuevo = null;
-      reiniciarAnadir();
-      location.hash = '#armario';
+      irAlArmarioTrasGuardar();
     },
-    onCancelar: () => { editorNuevo = null; reiniciarAnadir(); },
+    onCancelar: () => cerrarConPregunta(capaEd),
   });
   editorNuevo = ed;
   host.replaceChildren(ed.el);
+  // Paso «editor de la prenda»: atrás vuelve al inicio de Añadir (preguntando si hay cambios)
+  const capaEd = abrirCapa({
+    cerrar: () => { ed.destruir(); if (editorNuevo === ed) editorNuevo = null; reiniciarAnadir(); },
+    antesDeCerrar: () => !ed.hayCambios() || confirmarDescartar(),
+  });
 
   // Clasificación automática (no bloquea: se puede elegir la categoría mientras tanto)
   ed.setEstado('cargando', 'Cargando el clasificador…');
@@ -611,13 +677,15 @@ async function alElegirFoto(e) {
 }
 
 /* ================= AÑADIR BÁSICO (SIN FOTO) ================= */
-function mostrarCatalogoBasicos() {
+// Paso «elegir tipo de básico». nuevo=false cuando se vuelve a él desde el editor (ya está en el historial)
+function mostrarCatalogoBasicos({ nuevo = true } = {}) {
   reiniciarAnadir();
   $('#anadir-inicio').hidden = true;
+  if (nuevo) abrirCapa({ cerrar: () => reiniciarAnadir() });
   $('#anadir-editor').replaceChildren(
     h('div', { class: 'catalogo-cab' },
       h('h2', { class: 'section-title' }, 'Elige un básico'),
-      h('button', { class: 'link-btn', type: 'button', onclick: reiniciarAnadir }, 'Volver')),
+      h('button', { class: 'link-btn', type: 'button', onclick: () => atras() }, 'Volver')),
     h('p', { class: 'muted small' }, 'Después eliges su color y, si quieres, el estampado.'),
     ...GRUPOS_BASICOS.map((g) => h('section', { class: 'catalogo-grupo' },
       h('h3', { class: 'sub-title' }, g.nombre),
@@ -630,7 +698,8 @@ function mostrarCatalogoBasicos() {
 
 function editarBasicoNuevo(b) {
   const host = $('#anadir-editor');
-  const volver = () => { if (editorNuevo) editorNuevo.destruir(); editorNuevo = null; mostrarCatalogoBasicos(); };
+  let capaEd = null;
+  const volver = () => cerrarConPregunta(capaEd);
   const ed = crearEditor({
     basico: { id: b.id, icono: b.icono },
     nombrePrenda: b.nombre,
@@ -642,9 +711,7 @@ function editarBasicoNuevo(b) {
       await db.put('prendas', { id: db.uid(), foto: null, basico: { id: b.id, icono: b.icono }, ...datos, creada: Date.now() });
       await recargarDatos();
       toast('Prenda guardada');
-      editorNuevo = null;
-      reiniciarAnadir();
-      location.hash = '#armario';
+      irAlArmarioTrasGuardar();
     },
     onCancelar: volver,
   });
@@ -653,6 +720,19 @@ function editarBasicoNuevo(b) {
     h('button', { class: 'link-btn volver-catalogo', type: 'button', onclick: volver }, '← Elegir otro básico'),
     ed.el);
   window.scrollTo(0, 0);
+  // Paso «editor del básico»: atrás vuelve al catálogo (preguntando si hay cambios)
+  capaEd = abrirCapa({
+    cerrar: () => { ed.destruir(); if (editorNuevo === ed) editorNuevo = null; mostrarCatalogoBasicos({ nuevo: false }); },
+    antesDeCerrar: () => !ed.hayCambios() || confirmarDescartar(),
+  });
+}
+
+// Tras guardar una prenda nueva: se cierran los pasos de Añadir y se vuelve al Armario
+function irAlArmarioTrasGuardar() {
+  editorNuevo = null;
+  volverAlInicio();
+  reiniciarAnadir();
+  if (tabActual() !== 'armario') irATab('armario');
 }
 
 /* ================= EDITAR ================= */
@@ -662,7 +742,7 @@ async function abrirEdicion(prenda) {
   if (prenda.foto) {
     try { canvas = await blobToCanvas(prenda.foto, 800); } catch { toast('No se pudo abrir la foto'); return; }
   }
-  const cerrar = () => { ed.destruir(); dlg.close(); };
+  const cerrar = () => cerrarConPregunta(dlg.capaNav); // cierra la ventana entera, preguntando si hay cambios
   const ed = crearEditor({
     blob: prenda.foto || null, canvas, modo: 'editar',
     basico: prenda.basico || null,
@@ -679,7 +759,7 @@ async function abrirEdicion(prenda) {
       toast('Cambios guardados');
       renderArmario();
     },
-    onCancelar: () => dlg.close(),
+    onCancelar: () => cerrarConPregunta(dlg.capaNav),
     onBorrar: async (destruir) => {
       if (!confirm('¿Borrar esta prenda? No se puede deshacer.')) return;
       await db.remove('prendas', prenda.id);
@@ -698,7 +778,8 @@ async function abrirEdicion(prenda) {
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', html: ICONOS.cerrar, onclick: cerrar })),
     ed.el);
   dlg.onclose = () => ed.destruir();
-  dlg.showModal();
+  // Ventana «editar prenda»: atrás la cierra (preguntando si hay cambios sin guardar)
+  abrirDialogo(dlg, { antesDeCerrar: () => !ed.hayCambios() || confirmarDescartar() });
   dlg.scrollTop = 0;
 }
 
@@ -721,6 +802,15 @@ function generar(evitarActual = false) {
     });
   }
   pintarOutfit();
+  verOutfitComoPaso();
+}
+
+// Ver un outfit es un paso: «atrás» lo oculta (los «Otro» siguientes no añaden más pasos)
+let capaOutfit = null;
+function verOutfitComoPaso() {
+  if (!estado.outfitActual || estado.outfitActual.error) return;
+  if (capaOutfit && capaAbierta(capaOutfit)) return;
+  capaOutfit = abrirCapa({ cerrar: () => { capaOutfit = null; estado.outfitActual = null; pintarOutfit(); } });
 }
 
 function favoritoDe(clave) { return estado.favoritos.find((f) => claveOutfit(f.ids) === clave); }
@@ -792,6 +882,7 @@ function pintarFavoritos() {
       if (!prendas.length) return;
       estado.outfitActual = { prendas, clave: claveOutfit(f.ids), estilo: f.estilo, frase: f.frase, aviso: incompleto ? 'Alguna prenda de este outfit se ha borrado.' : '' };
       pintarOutfit();
+      verOutfitComoPaso();
       $('#outfit-resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     fila.addEventListener('click', ver);
@@ -811,19 +902,34 @@ async function abrirAjustes() {
   const version = await versionInstalada();
   if (version) info += ` · Versión ${version}`;
   $('#info-almacen').textContent = info;
-  dlg.showModal();
+  abrirDialogo(dlg);
 }
 
 /* ================= INICIO ================= */
+// Tocar fuera de una ventana equivale a «atrás» (así pregunta si hay cambios sin guardar)
 function cerrarAlTocarFondo(dlg) {
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) cerrarConPregunta(dlg.capaNav); });
 }
 
 async function iniciar() {
-  window.addEventListener('hashchange', ruta);
+  // Navegación: pestaña inicial desde la URL y enlaces internos (#armario, #anadir…) sin recargar
+  const inicial = (location.hash || '#armario').slice(1);
+  iniciarNavegacion(VISTAS[inicial] ? inicial : 'armario', (tab) => ruta(tab));
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    const tab = a.getAttribute('href').slice(1);
+    if (!VISTAS[tab]) return;
+    e.preventDefault();
+    irATab(tab);
+  });
   $('#input-camara').addEventListener('change', alElegirFoto);
   $('#input-galeria').addEventListener('change', alElegirFoto);
-  $('#btn-basico').addEventListener('click', mostrarCatalogoBasicos);
+  $('#btn-basico').addEventListener('click', () => mostrarCatalogoBasicos());
+  $('#btn-quitar-filtros').addEventListener('click', () => {
+    estado.filtroCat = null; estado.filtroColor = null; estado.filtroEst = null;
+    renderArmario();
+  });
   const swFondo = $('#fondo-blanco');
   swFondo.checked = leerPref('fondoBlanco', 'true') === 'true';
   swFondo.addEventListener('change', () => guardarPref('fondoBlanco', String(swFondo.checked)));
