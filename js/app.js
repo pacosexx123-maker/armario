@@ -578,6 +578,8 @@ async function abrirAjustes() {
     const est = await navigator.storage.estimate();
     info += ` · ${(est.usage / 1048576).toFixed(1)} MB usados`;
   } catch { /* sin soporte */ }
+  const version = await versionInstalada();
+  if (version) info += ` · Versión ${version}`;
   $('#info-almacen').textContent = info;
   dlg.showModal();
 }
@@ -633,9 +635,37 @@ async function iniciar() {
   ruta();
   db.requestPersistence();
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker no registrado', e));
-  }
+  registrarServiceWorker();
+}
+
+// Registra el service worker y recarga la app sola cuando hay una versión nueva.
+function registrarServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  const habiaVersion = !!navigator.serviceWorker.controller;
+  let recargando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!habiaVersion || recargando) return; // primera instalación: no hace falta
+    if (document.querySelector('dialog[open]') || editorNuevo) {
+      // Hay algo a medio editar: avisar en vez de recargar y perderlo
+      toast('Hay una versión nueva. Se aplicará al volver a abrir la app.');
+      return;
+    }
+    recargando = true;
+    location.reload();
+  });
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
+    // Al volver a la app desde segundo plano, comprobar si hay versión nueva
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+  }).catch((e) => console.warn('Service worker no registrado', e));
+}
+
+async function versionInstalada() {
+  try {
+    const k = (await caches.keys()).find((n) => /^armario-v\d+-app$/.test(n));
+    return k ? k.replace(/^armario-(v\d+)-app$/, '$1') : '';
+  } catch { return ''; }
 }
 
 iniciar();

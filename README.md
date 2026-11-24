@@ -59,7 +59,7 @@ No hace falta compilar nada: son archivos estáticos.
 
 Ábrela en Chrome en el móvil para probarla. También puedes instalarla directamente con el menú ⋮ → *Añadir a pantalla de inicio*.
 
-> **Al publicar cambios:** sube a `sw.js` el número de `VERSION` (`armario-v1` → `armario-v2`…). Así los móviles descargan la versión nueva en lugar de seguir con la que tenían en caché.
+> **Al publicar cambios:** sube el número de `VERSION` en `sw.js` (`armario-v4` → `armario-v5`…). La app pide siempre primero los archivos a la red y se recarga sola cuando detecta una versión nueva; sin conexión usa la copia guardada.
 
 ## 2. Generar el APK con PWABuilder
 
