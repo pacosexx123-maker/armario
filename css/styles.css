@@ -242,8 +242,18 @@ select.needs-choice { border-color: var(--accent); box-shadow: 0 0 0 3px var(--a
 .est-paleta { padding: 12px; border-radius: 14px; background: var(--surface-2); }
 .est-preview { height: 88px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .est-nota { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--ink-2); font-size: 13px; font-weight: 500; }
-.pal-fila { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 8px; }
-.pal-nombre { font-size: 12px; font-weight: 600; color: var(--ink-2); line-height: 1.2; }
+.pal-fila { display: grid; grid-template-columns: 100px minmax(0, 1fr); align-items: center; gap: 8px; }
+.pal-nombre {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  min-height: 34px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+  font-size: 12px; font-weight: 600; color: var(--ink-2); line-height: 1.2; text-align: left;
+}
+.pal-nombre:active { transform: scale(.97); }
+.pal-mas { flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-size: 14px; font-weight: 700; color: var(--ink); }
+/* Ventana con los 32 tonos de una familia */
+.tonos-ampliados .sheet-head h2 { font-size: 22px; }
+.tonos-rejilla { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin-top: 4px; }
+.tonos-rejilla .pal-tono { min-height: 34px; max-height: none; border-radius: 8px; }
 .pal-tonos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .pal-tono {
   aspect-ratio: 1; width: 100%; min-height: 30px; max-height: 44px; padding: 0; border: 0; border-radius: 9px;
