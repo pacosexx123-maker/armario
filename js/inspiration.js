@@ -11,7 +11,7 @@ import { abrirDialogo } from './nav.js';
 const TEMPORADAS = ['verano', 'invierno', 'todo el año'];
 const ROLES = { base: 'Base', acento: 'Acento', neutro: 'Neutro' };
 
-let ctx = null;          // { prendas(), urlFoto(prenda), abrirEdicionPrenda(prenda) }
+let ctx = null;          // { prendas(), urlFoto(prenda), imgPrenda(prenda, attrs), abrirEdicionPrenda(prenda) }
 let biblioteca = null;   // looks de looks.json
 let misLooks = [];
 const urlsLooks = new Map();
@@ -140,7 +140,7 @@ function pintarDetalle() {
     h('figcaption', {}, 'Tu versión'),
     elegidas.length
       ? h('div', { class: `cmp-mia n${Math.min(elegidas.length, 4)}` }, ...elegidas.map((r) =>
-        h('img', { src: ctx.urlFoto(r.prenda), alt: nombreCategoria(r.prenda.categoria) })))
+        ctx.imgPrenda(r.prenda, { alt: nombreCategoria(r.prenda.categoria) })))
       : h('div', { class: 'cmp-vacia' }, 'Aún no tienes prendas parecidas'));
 
   const filas = res.huecos.map((r, i) => {
@@ -154,7 +154,7 @@ function pintarDetalle() {
         h('strong', {}, describirHueco(r.hueco)),
         h('span', {}, `${ROLES[r.hueco.rol] || ''}${r.ok ? '' : ' · no tienes nada parecido'}`)),
       r.prenda
-        ? h('img', { class: 'slot-mia', src: ctx.urlFoto(r.prenda), alt: nombreCategoria(r.prenda.categoria) })
+        ? ctx.imgPrenda(r.prenda, { class: 'slot-mia', alt: nombreCategoria(r.prenda.categoria) })
         : h('div', { class: 'slot-mia vacia', 'aria-hidden': 'true' }, '?'),
       h('div', { class: 'slot-pct' }, `${r.puntos}%`),
       btnOtra || h('span'));

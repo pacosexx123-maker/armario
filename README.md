@@ -58,6 +58,9 @@ Los looks con algún dato incorrecto se ignoran y la consola del navegador avisa
 ├── .nojekyll           Indica a GitHub Pages que sirva los archivos tal cual
 ├── css/styles.css      Estilos
 ├── icons/              Iconos PNG de 192 y 512 px
+├── assets/catalogo/    Fotos de producto en gris (PNG transparente), una por básico
+│   └── mascaras/       Máscaras de botones y cremalleras + indice.json
+├── tools/mascaras.py   Script (una sola vez) que genera las máscaras
 └── js/
     ├── app.js          Interfaz y navegación
     ├── db.js           Base de datos local (IndexedDB)
@@ -71,6 +74,7 @@ Los looks con algún dato incorrecto se ignoran y la consola del navegador avisa
     ├── pattern.js      Estampados: modelo, dibujo, editor reutilizable y detección
     ├── basics.js       Catálogo de básicos (prendas sin foto)
     ├── nav.js          Navegación con la History API (botón «atrás» de Android)
+    ├── catalogo.js     Imágenes realistas (prueba): recolorea las fotos de producto con canvas
     ├── matching.js     Parecido entre un look y tu armario (familias, CIEDE2000)
     ├── illustration.js Ilustraciones de los looks (iconos de prenda en SVG)
     ├── inspiration.js  Pestaña Inspiración (lista, filtros, comparación)
@@ -145,3 +149,14 @@ python -m http.server 8000
 ```
 
 y abre `http://localhost:8000`.
+
+## Imágenes realistas (prueba)
+
+En `assets/catalogo/` hay una foto de producto por básico, en gris claro y con fondo transparente. La app las recolorea en el móvil con el color de base, el estampado y el color de botones o cremallera, usando la luminosidad de la foto como sombreado para que se mantengan los pliegues. Por ahora solo se usan en la camisa oxford, el pantalón chino y el jersey de cuello redondo. Para activarlas en más básicos, añade sus ids a `REALISTAS_ACTIVOS` en `js/catalogo.js` (o usa `DISPONIBLES` para todos). En Ajustes, «Imágenes realistas (prueba)» permite comparar con los dibujos.
+
+Si cambias o añades fotos, vuelve a generar las máscaras de botones y cremalleras:
+
+```bash
+python tools/mascaras.py
+```
+

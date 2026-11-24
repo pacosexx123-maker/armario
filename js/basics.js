@@ -16,6 +16,7 @@ export const BASICOS = [
   { id: 'jersey-redondo',   nombre: 'Jersey de punto cuello redondo',  categoria: 'jersey',     icono: 'jersey',           genero: 'unisex', estilos: ['casual', 'formal'],  color: '#8a8d91' },
   { id: 'jersey-pico',      nombre: 'Jersey de punto cuello de pico',  categoria: 'jersey',     icono: 'jersey_pico',      genero: 'unisex', estilos: ['casual', 'formal'],  color: '#1d2741' },
   { id: 'jersey-alto',      nombre: 'Jersey de cuello alto',           categoria: 'jersey',     icono: 'cuello_alto',      genero: 'unisex', estilos: ['casual', 'formal'],  color: '#161616' },
+  { id: 'jersey-half-zip',  nombre: 'Jersey de lana con media cremallera', categoria: 'jersey', icono: 'jersey_half_zip', genero: 'unisex', estilos: ['casual', 'formal'], color: '#8a8d91' },
   { id: 'cardigan',         nombre: 'Cárdigan',                        categoria: 'jersey',     icono: 'cardigan',         genero: 'unisex', estilos: ['casual', 'formal'],  color: '#d4bf9f' },
   { id: 'sudadera',         nombre: 'Sudadera',                        categoria: 'sudadera',   icono: 'sudadera',         genero: 'unisex', estilos: ['casual', 'deporte'], color: '#8a8d91' },
   { id: 'sudadera-capucha', nombre: 'Sudadera con capucha',            categoria: 'sudadera',   icono: 'sudadera_capucha', genero: 'unisex', estilos: ['casual', 'deporte'], color: '#161616' },

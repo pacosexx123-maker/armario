@@ -9,6 +9,7 @@ import { ESTILOS_OUTFIT } from './outfits.js';
 import { esLlamativo } from './pattern.js';
 
 export const UMBRAL_OK = 55; // a partir de aquí la prenda se considera «razonablemente parecida»
+const PESO_SIN_PRENDA = 0.15; // parte de sus puntos que cuenta un hueco sin prenda parecida
 
 /* ---------- Categorías: familias intercambiables ---------- */
 
@@ -123,8 +124,15 @@ export function adaptarLook(look, prendas, elecciones = {}) {
       ok: !!elegida,
     };
   }
+  // Un hueco sin prenda razonablemente parecida cuenta como mucho un 15 % de los puntos de su
+  // candidato más cercano: así, que falte una prenda principal baja claramente el parecido.
+  // (En «Prenda a prenda» se sigue enseñando el % de ese candidato como información.)
   let suma = 0, pesos = 0;
-  huecos.forEach((r) => { const w = pesoHueco(r.hueco); suma += r.puntos * w; pesos += w; });
+  huecos.forEach((r) => {
+    const w = pesoHueco(r.hueco);
+    suma += (r.ok ? r.puntos : r.puntos * PESO_SIN_PRENDA) * w;
+    pesos += w;
+  });
   return {
     huecos,
     parecido: pesos ? Math.round(suma / pesos) : 0,

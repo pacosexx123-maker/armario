@@ -62,11 +62,15 @@ export function describirEstampado(e) {
   }
 }
 
-// Color del estampado; si no se ha elegido, uno que contraste con la base (solo para dibujarlo)
+// Color del estampado por defecto (si no se ha elegido): blanco sobre colores medios y
+// oscuros, y azul marino sobre colores muy claros. Nunca negro.
+export const colorEstampadoPorDefecto = (base) => (hexToLab(base)[0] > 82 ? '#1d2741' : '#ffffff');
+
+// Color del estampado; si no se ha elegido, el de por defecto (solo para dibujarlo)
 export function colorEstampado(base, e) {
   const est = normalizarEstampado(e);
   if (est.color2) return est.color2;
-  return hexToLab(base)[0] > 60 ? '#1c1a18' : '#f5f5f3';
+  return colorEstampadoPorDefecto(base);
 }
 
 /* ---------- Dibujo ---------- */
@@ -165,15 +169,17 @@ export function crearEditorEstampado({ base = '#cccccc', valor = null, onCambio 
       filas.push(filaChips(est.tipo === 'rayas' ? 'Grosor' : 'Tamaño', TAMANOS[est.tipo], est.tamano, (v) => { est.tamano = v; cambio(); }));
     }
     if (est.tipo !== 'liso') {
-      const muestra = h('span', { class: 'est-c2', style: { background: est.color2 || 'transparent' } });
+      // Sin color elegido se enseña el de por defecto y la fila se resalta para invitar a elegirlo
+      const porDefecto = colorEstampadoPorDefecto(colorBase);
+      const muestra = h('span', { class: 'est-c2' + (est.color2 ? '' : ' auto'), style: { background: est.color2 || porDefecto } });
       const btnElegir = h('button', { class: 'btn mini', type: 'button', 'aria-expanded': String(!panelPaleta.hidden) },
         panelPaleta.hidden ? 'Elegir de la paleta' : 'Ocultar paleta');
       btnElegir.addEventListener('click', () => { if (panelPaleta.hidden) mostrarPaleta(); else ocultarPaleta(); pintar(); });
-      filas.push(h('div', { class: 'est-fila' },
-        h('span', { class: 'est-etiqueta' }, 'Color del estampado'),
+      filas.push(h('div', { class: 'est-fila' + (est.color2 ? '' : ' resaltar') },
+        h('span', { class: 'est-etiqueta' }, 'Color del estampado', est.color2 ? null : h('span', { class: 'est-pista' }, ' · elige uno')),
         h('div', { class: 'est-color' },
           muestra,
-          h('span', { class: 'est-c2-nombre' }, est.color2 ? describirColor(est.color2).nombre : 'Sin elegir (opcional)'),
+          h('span', { class: 'est-c2-nombre' }, est.color2 ? describirColor(est.color2).nombre : `Automático (${describirColor(porDefecto).nombre})`),
           btnElegir,
           est.color2 ? h('button', { class: 'link-btn', type: 'button', onclick: () => { est.color2 = null; cambio(); } }, 'Quitar') : null)));
     } else {
@@ -196,7 +202,7 @@ export function crearEditorEstampado({ base = '#cccccc', valor = null, onCambio 
   return {
     el: h('div', { class: 'est-editor' }, tipos, opciones, panelPaleta, vista, nota),
     get valor() { return normalizarEstampado(est); },
-    setBase(hex) { colorBase = hex; pintarVista(); },
+    setBase(hex) { colorBase = hex; if (est.tipo !== 'liso' && !est.color2) pintar(); else pintarVista(); },
     setValor(v, textoNota = '') {
       est = normalizarEstampado(v);
       ocultarPaleta();

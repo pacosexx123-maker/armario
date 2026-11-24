@@ -9,6 +9,8 @@ import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande, mostrarFotoGrande } from './ui.js';
 import { svgPrenda, svgADataURL } from './illustration.js';
 import { gruposBasicos } from './basics.js';
+import { realistaDePrenda, realistaDeBasico, realistaEnCache, renderRealista, cargarIndice, tieneCierre, tieneCremallera,
+  botonesPorDefecto, catalogoDeCategoria, detectarBotonesEnFoto } from './catalogo.js';
 
 // Preferencia «Mostrar contenido de»: 'mujer' | 'hombre' | 'ambos' ('' si aún no se ha elegido)
 const NOMBRE_GENERO = { mujer: 'Mujer', hombre: 'Hombre', ambos: 'Ambos' };
@@ -32,9 +34,48 @@ const estado = {
 const GRUPO_CALZADO = 'grupo:calzado';
 const urls = new Map(); // id de prenda → { firma, url } de su foto o de su ilustración
 
-// URL de la imagen de una prenda: su foto o, si no tiene (básico), su ilustración SVG
-// con el color de base y el estampado. Así se ve igual en todas las pantallas.
+// Opciones de la imagen realista de una prenda (color de base, estampado y botones)
+const opcionesRealista = (p) => ({ base: p.color?.hex || '#cccccc', estampado: p.estampado, botones: p.botones || null });
+
+// URL de la imagen realista si ya está hecha (si no, la encarga y devuelve null)
+function urlRealista(p, encargar = true) {
+  const id = realistaDePrenda(p);
+  if (!id) return null;
+  const opciones = opcionesRealista(p);
+  const hecha = realistaEnCache(id, opciones);
+  if (hecha || !encargar) return hecha;
+  renderRealista(id, opciones).then(() => refrescarImagenes(p.id)).catch((e) => console.warn('Imagen realista', e));
+  return null;
+}
+
+// Cuando termina una imagen realista, se cambia en todas las <img> de esa prenda que haya a la vista
+function refrescarImagenes(idPrenda) {
+  const p = estado.prendas.find((x) => x.id === idPrenda);
+  const url = p && urlRealista(p, false);
+  if (!url) return;
+  document.querySelectorAll('img[data-prenda]').forEach((img) => {
+    if (img.dataset.prenda === idPrenda) { img.src = url; img.classList.add('ilus'); }
+  });
+}
+
+// ¿La imagen de la prenda es una ilustración o imagen realista (no su foto)? Se muestra entera
+const esIlustracion = (p) => !p.foto || !!realistaDePrenda(p);
+
+// <img> de una prenda (foto, ilustración o imagen realista), marcada para poder actualizarla
+function imgPrenda(p, attrs = {}) {
+  return h('img', { ...attrs, src: urlFoto(p), 'data-prenda': p.id, class: [attrs.class, esIlustracion(p) ? 'ilus' : ''].filter(Boolean).join(' ') });
+}
+
+// Encargar de antemano las imágenes realistas de todo el armario (se hacen de una en una)
+function precargarRealistas() {
+  estado.prendas.forEach((p) => urlRealista(p));
+}
+
+// URL de la imagen de una prenda: la imagen realista (prueba) si está activada y lista; si no, su
+// foto o, si no tiene (básico), su ilustración SVG con el color de base y el estampado.
 function urlFoto(p) {
+  const realista = urlRealista(p);
+  if (realista) return realista;
   const firma = p.foto ? 'foto' : JSON.stringify([p.basico?.icono || p.categoria, p.color?.hex, p.estampado]);
   const actual = urls.get(p.id);
   if (actual && actual.firma === firma) return actual.url;
@@ -64,6 +105,7 @@ async function recargarDatos() {
       ...(p.basico?.id === 'sandalias' && p.categoria === 'zapatos' ? { categoria: 'sandalias' } : {}),
     }))
     .sort((a, b) => (b.creada || 0) - (a.creada || 0));
+  setTimeout(precargarRealistas, 0); // imágenes realistas del armario, en segundo plano
   estado.favoritos = favoritos.sort((a, b) => (b.fecha || 0) - (a.fecha || 0));
   const ids = new Set(prendas.map((p) => p.id));
   [...urls.keys()].forEach((id) => { if (!ids.has(id)) liberarFoto(id); });
@@ -342,7 +384,7 @@ function renderArmario() {
 
   grid.replaceChildren(...visibles.map((p) =>
     h('button', { class: 'item', type: 'button', onclick: () => abrirEdicion(p), 'aria-label': `Editar ${nombrePrenda(p)} ${p.color?.nombre || ''}` },
-      h('img', { src: urlFoto(p), alt: '', loading: 'lazy', decoding: 'async' }),
+      imgPrenda(p, { alt: '', loading: 'lazy', decoding: 'async' }),
       h('div', { class: 'meta' },
         h('span', { class: 'dot', style: { background: fondoEstampado(p.color?.hex || '#cccccc', p.estampado, { dividido: true }) } }),
         h('span', { class: 'name' }, nombrePrenda(p)),
@@ -358,8 +400,12 @@ function renderArmario() {
 // Se usa tanto para añadir como para editar.
 // calcularAuto(balanceActivo): recalcula el color automático (solo al añadir una prenda nueva)
 // basico: { id, icono } si la prenda se creó sin foto (se muestra con su ilustración).
-function crearEditor({ blob = null, canvas = null, color, categoria = '', estilos = [], etiqueta = null, estampado = null, notaEstampado = '', basico = null, nombrePrenda = '', modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
+// botones: color guardado de botones/cremallera; botonesDetectados: lo encontrado en la foto (null = no se encontró)
+function crearEditor({ blob = null, canvas = null, color, categoria = '', estilos = [], etiqueta = null, estampado = null, notaEstampado = '', basico = null, nombrePrenda = '', botones = null, botonesDetectados, modo, calcularAuto = null, onGuardar, onCancelar, onBorrar }) {
   const st = {
+    botones: botones || (botonesDetectados && botonesDetectados.hex) || null, // null = automático (parecido al de base)
+    modoBoton: false,                 // el próximo toque en la foto coge el color de un botón
+    vista: modo === 'editar' ? 'realista' : 'foto', // prendas con foto: «Imagen realista» o «Foto original»
     estampado: normalizarEstampado(estampado),
     estampadoTocado: modo === 'editar',
     color: { hex: color.hex, nombre: color.nombre },
@@ -408,14 +454,38 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
   img.addEventListener('click', (e) => {
     if (!st.canvas) return;
     const c = colorDeToque(e, img, st.canvas, marca, gananciasFoto());
-    if (c) { if (marcaOtra) marcaOtra.hidden = true; ponerColor(c); }
+    if (!c) return;
+    if (st.modoBoton) { st.modoBoton = false; st.sucio = true; ponerBotones(c.hex); toast('Color de los botones: ' + c.nombre); return; }
+    if (marcaOtra) marcaOtra.hidden = true;
+    ponerColor(c);
   });
 
-  // Sin foto (básico): ilustración que se actualiza en directo con el color y el estampado
+  // Sin foto (básico) o en «Imagen realista»: ilustración que se actualiza en directo con el color,
+  // el estampado y los botones. Si el tipo tiene imagen realista (prueba), se usa esa.
   const iconoBasico = basico ? basico.icono : categoria;
   const ilustracion = h('div', { class: 'photo-wrap basico-ilus', role: 'img', 'aria-label': 'Ilustración de la prenda' });
+  const idRealista = () => realistaDePrenda({ basico, foto: st.foto, categoria: st.categoria });
+  const idCatalogo = () => (basico ? basico.id : catalogoDeCategoria(st.categoria)); // para saber si tiene botones
+  const svgActual = () => svgPrenda(basico ? iconoBasico : (st.categoria || iconoBasico), st.color.hex, st.estampado, { fondo: false });
+  let encargo = 0, temporizadorRealista = null;
+  const ponerImagenRealista = (url) => {
+    const actual = ilustracion.querySelector('img.realista');
+    if (actual) actual.src = url;
+    else ilustracion.replaceChildren(h('img', { class: 'realista', src: url, alt: 'Vista realista de la prenda', draggable: 'false' }));
+  };
   const pintarIlustracion = () => {
-    if (!st.foto) ilustracion.innerHTML = svgPrenda(iconoBasico, st.color.hex, st.estampado, { fondo: false });
+    if (st.foto && st.vista !== 'realista') return;
+    const id = idRealista();
+    if (!id) { ilustracion.innerHTML = svgActual(); return; }
+    const opciones = { base: st.color.hex, estampado: st.estampado, botones: st.botones };
+    const hecha = realistaEnCache(id, opciones);
+    if (hecha) { ponerImagenRealista(hecha); return; }
+    if (!ilustracion.querySelector('img.realista')) ilustracion.innerHTML = svgActual(); // mientras se hace
+    const n = ++encargo;
+    clearTimeout(temporizadorRealista);
+    temporizadorRealista = setTimeout(() => renderRealista(id, opciones)
+      .then((url) => { if (n === encargo && !st.cerrado) ponerImagenRealista(url); })
+      .catch(() => { if (n === encargo) ilustracion.innerHTML = svgActual(); }), 80);
   };
   // Añadir una foto más tarde (se conservan todos los datos de la prenda)
   const inputFotoGal = h('input', { type: 'file', accept: 'image/*', hidden: true });
@@ -439,6 +509,15 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
   inputFotoCam.addEventListener('change', alAnadirFoto);
   const zonaFoto = h('div', { class: 'zona-foto' });
   function montarZonaFoto() {
+    if (st.foto && idRealista()) {
+      // Prenda con foto de un tipo con imagen realista: se puede ver una u otra
+      const vista = (v) => h('button', { type: 'button', role: 'radio', 'aria-checked': String(st.vista === v),
+        onclick: () => { st.vista = v; if (v === 'realista') st.modoBoton = false; montarZonaFoto(); } }, v === 'realista' ? 'Imagen realista' : 'Ver foto original');
+      const conmutador = h('div', { class: 'segmented dos', role: 'radiogroup', 'aria-label': 'Qué imagen ver' }, vista('realista'), vista('foto'));
+      if (st.vista === 'realista') { pintarIlustracion(); zonaFoto.replaceChildren(conmutador, ilustracion); }
+      else zonaFoto.replaceChildren(conmutador, wrapFoto);
+      return;
+    }
     if (st.foto) zonaFoto.replaceChildren(wrapFoto);
     else {
       pintarIlustracion();
@@ -595,6 +674,7 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     inputColor.value = c.hex;
     paleta.marcar(c.hex);
     if (editorEst) editorEst.setBase(c.hex);
+    if (colorIniciado) pintarBotones();
   }
   ponerColor(st.color, { auto: st.colorEsAuto });
   colorIniciado = true;
@@ -607,6 +687,46 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
   });
   if (notaEstampado) editorEst.setValor(st.estampado, notaEstampado);
 
+  // Botones / cremallera (solo en prendas que los tienen). Por defecto, un tono parecido al de base.
+  const tarjetaBotones = h('div', { class: 'card botones-card', hidden: true });
+  const paletaBotones = crearPaleta({ onElegir: (hex) => { st.sucio = true; ponerBotones(hex); } });
+  const panelBotones = h('div', { class: 'paleta-panel', hidden: true }, paletaBotones.el);
+  function ponerBotones(hex) {
+    st.botones = hex;
+    pintarBotones();
+    pintarIlustracion();
+  }
+  function pintarBotones() {
+    const id = idCatalogo();
+    const visible = tieneCierre(id);
+    tarjetaBotones.hidden = !visible;
+    if (!visible) return;
+    const cremallera = tieneCremallera(id);
+    const efectivo = st.botones || botonesPorDefecto(st.color.hex);
+    paletaBotones.marcar(st.botones);
+    // En una prenda nueva con foto, si no se encontraron los botones con seguridad, se pide tocarlos
+    const sinDetectar = !!st.foto && modo === 'nuevo' && botonesDetectados === null && !st.botones;
+    tarjetaBotones.replaceChildren(...[
+      h('p', { class: 'field-label' }, cremallera ? 'Cremallera' : 'Botones'),
+      h('div', { class: 'color-row' },
+        h('span', { class: 'swatch botones-muestra', style: { background: efectivo } }),
+        h('div', { class: 'color-info' },
+          h('div', { class: 'color-name' }, describirColor(efectivo).nombre),
+          h('div', { class: 'muted small' }, st.botones
+            ? (botonesDetectados && botonesDetectados.hex === st.botones ? 'Detectado en la foto' : 'Elegido a mano')
+            : 'Automático: un tono parecido al de la prenda'))),
+      sinDetectar ? h('p', { class: 'botones-aviso' }, 'No he encontrado los botones con seguridad. Toca «Tocar en la foto» y luego un botón para coger su color.') : null,
+      h('div', { class: 'color-actions' },
+        h('button', { class: 'btn', type: 'button', onclick: () => { panelBotones.hidden = !panelBotones.hidden; } }, 'Paleta'),
+        st.foto ? h('button', { class: 'btn' + (st.modoBoton ? ' activo' : ''), type: 'button', onclick: () => {
+          st.modoBoton = true; st.vista = 'foto'; montarZonaFoto(); pintarBotones();
+          toast('Toca un botón en la foto'); zonaFoto.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } }, 'Tocar en la foto') : null,
+        h('button', { class: 'btn', type: 'button', onclick: () => { st.sucio = true; ponerBotones(null); } }, 'Automático')),
+      panelBotones,
+    ].filter(Boolean));
+  }
+
   // Categoría
   const select = h('select', { 'aria-label': 'Categoría' },
     h('option', { value: '', disabled: true }, 'Elige una categoría…'),
@@ -615,6 +735,8 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
   const aiEstado = h('div', { class: 'ai-status' });
   select.addEventListener('change', () => {
     st.categoria = select.value;
+    montarZonaFoto();
+    pintarBotones();
     st.categoriaTocada = true;
     select.classList.remove('needs-choice');
     if (!st.estilosTocados) { st.estilos = new Set(estilosPorDefecto(st.categoria)); pintarEstilos(); }
@@ -714,6 +836,7 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
       await onGuardar({
         categoria: st.categoria, color: st.color, estampado: normalizarEstampado(st.estampado),
         estilos: [...st.estilos], etiqueta: datosEtiqueta(), nombre: st.nombre.trim() || null,
+        botones: tieneCierre(idCatalogo()) ? (st.botones || null) : null,
         ...(st.fotoNueva ? { foto: st.foto } : {}),
       });
       destruir();
@@ -732,6 +855,7 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
   campoNombre.addEventListener('input', () => { st.nombre = campoNombre.value; });
 
   montarZonaFoto();
+  pintarBotones();
   const el = h('div', { class: 'editor' },
     zonaFoto,
     h('div', { class: 'card' },
@@ -745,6 +869,7 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Estampado'),
       editorEst.el),
+    tarjetaBotones,
     h('div', { class: 'card' },
       h('p', { class: 'field-label' }, 'Categoría'),
       select, aiEstado,
@@ -778,6 +903,8 @@ function crearEditor({ blob = null, canvas = null, color, categoria = '', estilo
     if (res.segura) {
       st.categoria = res.categoria;
       select.value = res.categoria;
+      montarZonaFoto();
+      pintarBotones();
       if (!st.estilosTocados) { st.estilos = new Set(estilosPorDefecto(res.categoria)); pintarEstilos(); }
       setEstado('ok', `Sugerido: ${nombreCategoria(res.categoria)} (${Math.round(res.confianza * 100)} % de confianza). Puedes cambiarlo.`);
     } else {
@@ -833,6 +960,8 @@ async function alElegirFoto(e) {
   try {
     ({ canvas, blob } = await processPhoto(file));
     color = analizar(leerPref('fondoBlanco', 'true') === 'true');
+    // Botones en la foto (para camisas): manchas pequeñas y redondeadas en la línea central
+    try { color.botonesDetectados = detectarBotonesEnFoto(canvas, color); } catch (e) { color.botonesDetectados = null; }
   } catch (err) {
     console.error(err);
     toast('No se pudo procesar la foto');
@@ -844,6 +973,7 @@ async function alElegirFoto(e) {
     blob, canvas, color, modo: 'nuevo',
     estampado: color.estampado,
     notaEstampado: textoSugerencia(color.estampado),
+    botonesDetectados: color.botonesDetectados,
     calcularAuto: analizar,
     onGuardar: async (datos) => {
       await db.put('prendas', { id: db.uid(), foto: blob, ...datos, creada: Date.now() });
@@ -873,6 +1003,18 @@ async function alElegirFoto(e) {
 }
 
 /* ================= AÑADIR BÁSICO (SIN FOTO) ================= */
+// Miniatura de un básico en el catálogo: imagen realista (prueba) si está activada; si no, su dibujo
+function miniaturaBasico(b) {
+  const el = h('span', { class: 'basico-mini', html: svgPrenda(b.icono, b.color, null, { fondo: false }) });
+  const id = realistaDeBasico(b.id);
+  if (id) {
+    renderRealista(id, { base: b.color, estampado: null, botones: null })
+      .then((url) => el.replaceChildren(h('img', { src: url, alt: '', class: 'realista' })))
+      .catch(() => {});
+  }
+  return el;
+}
+
 // Paso «elegir tipo de básico». nuevo=false cuando se vuelve a él desde el editor (ya está en el historial)
 function mostrarCatalogoBasicos({ nuevo = true } = {}) {
   reiniciarAnadir();
@@ -887,7 +1029,7 @@ function mostrarCatalogoBasicos({ nuevo = true } = {}) {
       h('h3', { class: 'sub-title' }, g.nombre),
       h('div', { class: 'catalogo' }, ...g.basicos.map((b) =>
         h('button', { class: 'basico-card', type: 'button', onclick: () => editarBasicoNuevo(b) },
-          h('span', { class: 'basico-mini', html: svgPrenda(b.icono, b.color, null, { fondo: false }) }),
+          miniaturaBasico(b),
           h('span', { class: 'basico-nombre' }, b.nombre),
           // Con «Ambos», se indica el corte de las prendas que tienen versión de mujer y de hombre
           generoPreferido() === 'ambos' && b.genero !== 'unisex' ? h('span', { class: 'basico-genero' }, NOMBRE_GENERO[b.genero]) : null))))));
@@ -950,6 +1092,7 @@ async function abrirEdicion(prenda) {
     estilos: prenda.estilos || [],
     etiqueta: prenda.etiqueta,
     estampado: estampadoDe(prenda),
+    botones: prenda.botones || null,
     onGuardar: async (datos) => {
       await db.put('prendas', { ...prenda, ...datos, actualizada: Date.now() });
       await recargarDatos();
@@ -1029,7 +1172,7 @@ function pintarOutfit() {
   host.replaceChildren(h('div', { class: 'card outfit' },
     h('div', { class: `outfit-pieces n${o.prendas.length}` },
       ...o.prendas.map((p) => h('div', { class: 'piece' },
-        h('img', { src: urlFoto(p), alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
+        imgPrenda(p, { alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
         h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: fondoEstampado(p.color.hex, p.estampado, { dividido: true }) } }), nombreCategoria(p.categoria))))),
     h('p', { class: 'outfit-why' }, o.frase),
     h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: fondoEstampado(p.color.hex, p.estampado) }, title: p.color.nombre }))),
@@ -1071,7 +1214,7 @@ function pintarFavoritos() {
       pintarOutfit();
     });
     const fila = h('div', { class: 'fav-row', role: 'button', tabindex: '0' },
-      h('div', { class: 'fav-thumbs' }, ...prendas.map((p) => h('img', { src: urlFoto(p), alt: '' }))),
+      h('div', { class: 'fav-thumbs' }, ...prendas.map((p) => imgPrenda(p, { alt: '' }))),
       h('div', { class: 'fav-text' },
         h('strong', {}, `${ESTILOS_OUTFIT[f.estilo]?.nombre || ''} · ${fecha}`),
         h('span', {}, incompleto ? 'Alguna prenda ya no está en tu armario' : f.frase)),
@@ -1101,6 +1244,7 @@ async function abrirAjustes() {
   if (version) info += ` · Versión ${version}`;
   $('#info-almacen').textContent = info;
   marcarGenero();
+  $('#ajuste-realistas').checked = leerPref('realistas', 'true') === 'true';
   abrirDialogo(dlg);
 }
 
@@ -1169,6 +1313,14 @@ async function iniciar() {
   $('#btn-generar').addEventListener('click', () => generar(true));
 
   $('#btn-ajustes').addEventListener('click', abrirAjustes);
+  $('#ajuste-realistas').addEventListener('change', (e) => {
+    guardarPref('realistas', String(e.target.checked));
+    // Repintar lo que se ve con el nuevo modo (las pantallas se vuelven a pintar al abrirlas)
+    VISTAS[tabActual()].render();
+    if ($('#anadir-editor .catalogo')) mostrarCatalogoBasicos({ nuevo: false });
+    if (e.target.checked) precargarRealistas();
+    toast(e.target.checked ? 'Imágenes realistas activadas' : 'Imágenes realistas desactivadas: se ven los dibujos');
+  });
   document.querySelectorAll('#ajuste-genero button').forEach((b) => b.addEventListener('click', () => {
     elegirGenero(b.dataset.genero);
     toast(`Mostrando contenido de: ${NOMBRE_GENERO[b.dataset.genero]}`);
@@ -1183,7 +1335,7 @@ async function iniciar() {
   cerrarAlTocarFondo($('#dlg-ajustes'));
   cerrarAlTocarFondo($('#dlg-look'));
 
-  iniciarInspiracion({ prendas: () => estado.prendas, urlFoto, abrirEdicionPrenda: abrirEdicion });
+  iniciarInspiracion({ prendas: () => estado.prendas, urlFoto, imgPrenda, abrirEdicionPrenda: abrirEdicion });
 
   $('#btn-exportar').addEventListener('click', async () => {
     try {
@@ -1204,6 +1356,7 @@ async function iniciar() {
     } catch (err) { toast(err.message || 'No se pudo importar'); }
   });
 
+  await cargarIndice(); // qué básicos tienen botones o cremallera
   try { await recargarDatos(); } catch (e) { console.error(e); toast('No se pudo abrir la base de datos'); }
   ruta();
   db.requestPersistence();
