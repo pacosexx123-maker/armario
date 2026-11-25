@@ -2,7 +2,7 @@
   "abrigo-largo": {
     "botones": 3,
     "cremallera": false,
-    "pixeles": 112
+    "pixeles": 992
   },
   "americana-m": {
     "botones": 1,
@@ -72,7 +72,7 @@
   "chaqueta-vaquera": {
     "botones": 7,
     "cremallera": false,
-    "pixeles": 225
+    "pixeles": 2040
   },
   "chino-m": {
     "botones": 0,
