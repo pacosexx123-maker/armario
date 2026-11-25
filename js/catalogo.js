@@ -305,7 +305,13 @@ async function recolorear(id, { base, estampado, botones }) {
 
 /* ---------- Caché y cola ---------- */
 
-const CACHE = 'armario-realistas-v1';
+// Cambia el número si cambian las fotos del catálogo o sus máscaras: las imágenes
+// ya recoloreadas con las fotos anteriores se borran.
+const CACHE = 'armario-realistas-v2';
+try {
+  caches.keys().then((ks) => ks.filter((k) => k.startsWith('armario-realistas-') && k !== CACHE)
+    .forEach((k) => caches.delete(k))).catch(() => {});
+} catch { /* sin Cache Storage */ }
 const enMemoria = new Map();   // clave → URL (objeto)
 const enCurso = new Map();     // clave → Promise<URL>
 let cola = Promise.resolve();  // de una en una, para no bloquear la interfaz
