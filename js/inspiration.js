@@ -6,6 +6,7 @@ import { adaptarLook, describirHueco } from './matching.js';
 import { ilustrarLook, iconoPrenda } from './illustration.js';
 import { nombreCategoria, categoria as infoCategoria } from './categories.js';
 import { realistaDeHueco, realistaEnCache, renderRealista } from './catalogo.js';
+import { crearManiqui, piezasDePrendas } from './maniqui-vista.js';
 import { ESTILOS_OUTFIT } from './outfits.js';
 import { abrirDialogo } from './nav.js';
 
@@ -90,6 +91,17 @@ function observar(el) {
   observador.observe(el);
 }
 
+// Una prenda del look: su imagen realista teñida (se carga al llamar a cargarComposicion) o su dibujo
+function pieza({ hu, id }) {
+  const el = h('div', { class: 'lc-pieza', style: `--tinte: ${hu.color}` });
+  if (!id) { el.innerHTML = iconoPrenda(hu.categoria, hu.color); el.classList.add('lista'); return el; }
+  const opciones = { base: hu.color, estampado: hu.estampado || null, botones: hu.botones || null };
+  const hecha = realistaEnCache(id, opciones);
+  if (hecha) ponerImagenPieza(el, hecha);
+  else el.realista = { id, opciones, categoria: hu.categoria };
+  return el;
+}
+
 // Devuelve el elemento con la composición, o null si no toca (imágenes realistas desactivadas)
 function composicionRealista(look, { titulo = '', perezosa = true } = {}) {
   const piezas = look.huecos.map((hu) => ({ hu, info: infoCategoria(hu.categoria), id: realistaDeHueco(hu, look.genero) }))
@@ -99,15 +111,6 @@ function composicionRealista(look, { titulo = '', perezosa = true } = {}) {
   const grandes = piezas.filter((x) => !pequena(x)).sort((a, b) => (ORDEN_GRANDES[a.hu.categoria] ?? 5) - (ORDEN_GRANDES[b.hu.categoria] ?? 5));
   const pequenas = piezas.filter(pequena).sort((a, b) => (a.info.slot === 'calzado' ? 0 : 1) - (b.info.slot === 'calzado' ? 0 : 1)).slice(0, 3);
 
-  const pieza = ({ hu, id }) => {
-    const el = h('div', { class: 'lc-pieza', style: `--tinte: ${hu.color}` });
-    if (!id) { el.innerHTML = iconoPrenda(hu.categoria, hu.color); el.classList.add('lista'); return el; }
-    const opciones = { base: hu.color, estampado: hu.estampado || null, botones: hu.botones || null };
-    const hecha = realistaEnCache(id, opciones);
-    if (hecha) ponerImagenPieza(el, hecha);
-    else el.realista = { id, opciones, categoria: hu.categoria };
-    return el;
-  };
   const el = h('div', titulo ? { class: 'look-comp', role: 'img', 'aria-label': titulo } : { class: 'look-comp', 'aria-hidden': 'true' },
     grandes.length ? h('div', { class: `lc-grandes n${Math.min(grandes.length, 5)}` }, ...grandes.map(pieza)) : null,
     pequenas.length ? h('div', { class: 'lc-pequenas' }, ...pequenas.map(pieza)) : null);
@@ -218,7 +221,7 @@ function pintarDetalle() {
       : null;
     if (btnOtra) btnOtra.setAttribute('aria-label', 'Ver otra opción para este hueco');
     return h('div', { class: 'slot-row' + (r.ok ? '' : ' falta') },
-      h('div', { class: 'slot-ref', html: iconoPrenda(r.hueco.categoria, r.hueco.color) }),
+      slotRef(r.hueco, look),
       h('div', { class: 'slot-txt' },
         h('strong', {}, describirHueco(r.hueco)),
         h('span', {}, `${ROLES[r.hueco.rol] || ''}${r.ok ? '' : ' · no tienes nada parecido'}`)),
@@ -245,6 +248,7 @@ function pintarDetalle() {
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>', onclick: () => dlg.close() })),
     h('p', { class: 'look-meta' }, meta(look), look.mio ? h('span', { class: 'badge' }, 'Mío') : null),
     h('div', { class: 'cmp' }, referencia, miVersion),
+    elegidas.length ? crearManiqui(piezasDePrendas(elegidas.map((r) => r.prenda)), { estilo: look.estilo, titulo: 'Tu versión en el maniquí' }) : null,
     h('div', { class: 'cmp-pct' }, h('strong', {}, `${res.parecido}%`), ' de parecido con tu armario'),
     h('h3', { class: 'sub-title' }, 'Prenda a prenda'),
     h('div', { class: 'slots' }, ...filas),
@@ -254,6 +258,15 @@ function pintarDetalle() {
       h('p', { class: 'muted small' }, 'Úsalo como lista de la compra.')) : null,
     acciones,
   ].filter(Boolean));
+}
+
+// Prenda del look en «Prenda a prenda»: su imagen realista teñida (o su dibujo si están desactivadas)
+function slotRef(hueco, look) {
+  const id = realistaDeHueco(hueco, look.genero);
+  if (!id) return h('div', { class: 'slot-ref', html: iconoPrenda(hueco.categoria, hueco.color) });
+  const el = h('div', { class: 'slot-ref realista' }, pieza({ hu: hueco, id }));
+  cargarComposicion(el);
+  return el;
 }
 
 /* ================= NUEVO LOOK ================= */

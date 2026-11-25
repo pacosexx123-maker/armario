@@ -619,3 +619,39 @@ body { touch-action: pan-y; }
 .ajuste-fila { padding: 4px 0; gap: 14px; }
 .ajuste-fila strong { display: block; font-size: 15px; }
 .ajuste-fila small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
+
+/* «Prenda a prenda»: la prenda del look con su imagen realista, del mismo tamaño que la mía */
+.slot-ref.realista { width: 46px; height: 56px; padding: 3px; overflow: hidden; }
+.slot-ref.realista .lc-pieza { width: 100%; height: 100%; border-radius: 7px; }
+
+/* Outfit sobre el maniquí (giro con perspectiva al deslizar) */
+.mq-bloque { position: relative; margin-top: 12px; padding: 12px 0 8px; border-radius: 14px; background: linear-gradient(180deg, var(--surface-2), var(--surface) 85%); }
+.maniqui {
+  position: relative; height: min(58vh, 440px); aspect-ratio: 2 / 5; margin: 0 auto;
+  perspective: 1000px; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab;
+}
+.maniqui.girando { cursor: grabbing; }
+.mq-escena { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+.mq-cara { position: absolute; inset: 0; transform-style: preserve-3d; }
+.mq-espalda { transform: rotateY(180deg); }
+.mq-capa { position: absolute; backface-visibility: hidden; -webkit-backface-visibility: hidden; animation: mq-entrar .35s ease both; }
+.mq-capa.mq-cuerpo { animation: none; }
+.mq-capa img { display: block; width: 100%; height: 100%; pointer-events: none; -webkit-user-drag: none; }
+.mq-sombra {
+  position: absolute; inset: 0; pointer-events: none;
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  background: linear-gradient(90deg, rgba(40, 28, 14, var(--si, 0)), rgba(40, 28, 14, 0) 48%, rgba(40, 28, 14, 0) 52%, rgba(40, 28, 14, var(--sd, 0)));
+}
+.mq-suelo {
+  position: absolute; left: 14%; right: 14%; bottom: 0; height: 5%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)); transform: scaleX(var(--cos, 1));
+}
+.maniqui.cargando .mq-cuerpo { animation: lc-latido 1.4s ease-in-out infinite; }
+@keyframes mq-entrar { from { opacity: 0; } }
+.mq-ampliar { position: absolute; top: 8px; right: 8px; background: var(--surface); box-shadow: var(--shadow); }
+.mq-ayuda { margin: 6px 0 0; text-align: center; font-size: 12px; color: var(--muted); }
+.visor-maniqui { background: linear-gradient(180deg, #f3efe9, #e4ddd2); color: var(--ink); }
+.visor-maniqui .mq-bloque { position: absolute; inset: 0; margin: 0; padding: calc(56px + env(safe-area-inset-top, 0px)) 0 calc(20px + var(--safe-b)); background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.visor-maniqui .maniqui { height: auto; width: min(100vw - 32px, (100dvh - 130px) * .4); max-height: calc(100dvh - 130px); }
+@media (prefers-reduced-motion: reduce) { .mq-capa { animation: none; } }
+.mq-capa.con-abertura { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }

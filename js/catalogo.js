@@ -52,6 +52,20 @@ const REALISTA_POR_CATEGORIA = {
 
 const CALZADO = new Set(['sneakers', 'mocasines', 'zapatos-vestir', 'botas', 'botines', 'bailarinas', 'salones', 'sandalias']);
 
+// Variantes opcionales de una foto: <id>-frente.png (calzado visto de frente) y <id>-espalda.png
+// (vista de espaldas). Se tiñen igual que la foto normal.
+const idBase = (id) => id.replace(/-(frente|espalda)$/, '');
+const variantes = new Map();
+export function existeVariante(id, sufijo) {
+  const v = `${id}-${sufijo}`;
+  if (!variantes.has(v)) {
+    variantes.set(v, fetch(`assets/catalogo/${v}.png`, { method: 'HEAD', cache: 'no-cache' })
+      .then((r) => r.ok && (r.headers.get('content-type') || 'image/png').startsWith('image/'))
+      .catch(() => false));
+  }
+  return variantes.get(v);
+}
+
 export const realistasActivadas = () => leerPref('realistas', 'true') === 'true';
 export const realistaDisponible = (id) => !!id && REALISTAS_ACTIVOS.includes(id) && DISPONIBLES.includes(id);
 
@@ -164,7 +178,7 @@ function cargarFuente(id) {
       // Se busca la fila (por debajo del 65 % de la altura) desde la que la luminosidad mediana
       // de cada fila salta y se mantiene por encima de la del empeine.
       let suela = null;
-      if (CALZADO.has(id)) {
+      if (CALZADO.has(idBase(id))) {
         // Percentiles 10 y 50 de la luminosidad de una fila
         const fila = (y) => {
           const v = [];
@@ -203,6 +217,12 @@ function cargarFuente(id) {
     })().catch((e) => { fuentes.delete(id); throw e; }));
   }
   return fuentes.get(id);
+}
+
+// Caja de la prenda dentro de su foto, en fracciones (0–1) del ancho y del alto de la imagen
+export async function cajaRealista(id) {
+  const f = await cargarFuente(id);
+  return { x0: f.caja.x0 / f.w, y0: f.caja.y0 / f.h, x1: (f.caja.x1 + 1) / f.w, y1: (f.caja.y1 + 1) / f.h, aspecto: f.w / f.h };
 }
 
 /* ---------- Sombreado: tabla gris de la foto → color ---------- */

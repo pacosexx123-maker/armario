@@ -8,6 +8,7 @@ import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande, mostrarFotoGrande } from './ui.js';
 import { svgPrenda, svgADataURL } from './illustration.js';
+import { crearManiqui, piezasDePrendas } from './maniqui-vista.js';
 import { gruposBasicos } from './basics.js';
 import { realistaDePrenda, realistaDeBasico, realistaEnCache, renderRealista, cargarIndice, tieneCierre, tieneCremallera,
   botonesPorDefecto, catalogoDeCategoria, detectarBotonesEnFoto } from './catalogo.js';
@@ -224,7 +225,7 @@ function moverIndicador(posicion, conAnimacion = true) {
 // La pantalla sigue al dedo y la de al lado entra a la vez; al soltar se completa o vuelve.
 // Solo se excluye lo que ya usa el gesto lateral: filas de chips que se desplazan de lado y campos
 // de texto. Sobre fotos, paletas o botones sí se puede deslizar (tocarlos sigue funcionando).
-const NO_DESLIZAR = '.scroll-x, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea, [contenteditable], .tabbar';
+const NO_DESLIZAR = '.scroll-x, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea, [contenteditable], .tabbar, .maniqui';
 function activarDeslizarPestanas() {
   // Se escucha en toda la pantalla (no solo en el contenido): así también funciona en la zona
   // vacía de abajo en las pantallas cortas (Añadir, Outfits…)
@@ -1174,6 +1175,7 @@ function pintarOutfit() {
       ...o.prendas.map((p) => h('div', { class: 'piece' },
         imgPrenda(p, { alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
         h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: fondoEstampado(p.color.hex, p.estampado, { dividido: true }) } }), nombreCategoria(p.categoria))))),
+    crearManiqui(piezasDePrendas(o.prendas), { estilo: o.estilo, titulo: 'Outfit en el maniquí' }),
     h('p', { class: 'outfit-why' }, o.frase),
     h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: fondoEstampado(p.color.hex, p.estampado) }, title: p.color.nombre }))),
     o.aviso ? h('p', { class: 'muted small' }, o.aviso) : null,
