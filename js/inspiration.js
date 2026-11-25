@@ -168,13 +168,12 @@ function tarjeta(look, res) {
     h('div', { class: 'look-ilus' + (foto ? ' con-foto' : comp ? ' con-comp' : ''), html: foto || comp ? '' : ilustrarLook(look.huecos) },
       foto ? h('img', { src: foto, alt: '', loading: 'lazy' }) : comp),
     h('div', { class: 'look-info' },
+      h('div', { class: 'look-estilo' }, ESTILOS_OUTFIT[look.estilo].nombre, look.mio ? h('span', { class: 'badge' }, 'Mío') : null),
       h('div', { class: 'look-nombre' }, look.nombre),
-      h('div', { class: 'look-meta' }, meta(look), look.mio ? h('span', { class: 'badge' }, 'Mío') : null),
-      h('div', { class: 'look-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${pct}%` } })),
-      h('div', { class: 'look-faltan' }, res.faltan.length
-        ? `Te ${res.faltan.length === 1 ? 'falta 1 prenda' : `faltan ${res.faltan.length} prendas`}`
-        : '¡Lo tienes todo!')),
-    h('div', { class: 'look-pct' }, h('strong', {}, `${pct}%`), h('span', {}, 'parecido')));
+      h('div', { class: 'look-medida', 'aria-label': `${pct}% de parecido` },
+        h('div', { class: 'look-bar', 'aria-hidden': 'true' }, h('span', { style: { width: `${pct}%` } })),
+        h('strong', { 'aria-hidden': 'true' }, `${pct}%`)),
+      h('div', { class: 'look-faltan' }, res.faltan.length ? `Te falta: ${res.huecos.filter((r) => !r.ok).map((r) => describirHueco(r.hueco)).join(', ')}` : 'Lo tienes todo')));
 }
 
 /* ================= DETALLE ================= */

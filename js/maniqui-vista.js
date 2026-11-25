@@ -224,7 +224,7 @@ export function crearManiqui(piezas, { estilo = '', titulo = 'Outfit en el maniq
     })
     .catch((e) => { console.warn('Maniquí', e); zona.classList.remove('cargando'); });
 
-  const ayuda = h('p', { class: 'mq-ayuda' }, 'Desliza sobre el maniquí para girarlo');
+  const ayuda = h('p', { class: 'mq-ayuda' }, '← Desliza para girar →');
   if (grande) return h('div', { class: 'mq-bloque grande' }, zona, ayuda);
   const ampliar = h('button', { class: 'icon-btn mq-ampliar', type: 'button', 'aria-label': 'Ver el maniquí a pantalla completa',
     html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',

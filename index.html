@@ -5,21 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Armario</title>
   <meta name="description" content="Tu armario digital: fotografía tus prendas, guarda su color y genera outfits.">
-  <meta name="theme-color" content="#f6f3ef">
+  <meta name="theme-color" content="#ffffff">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <header class="topbar">
+    <p id="page-eyebrow" class="eyebrow">Mi armario</p>
     <h1 id="page-title">Mi armario</h1>
-    <button id="btn-ajustes" class="icon-btn" type="button" aria-label="Ajustes">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-    </button>
   </header>
 
   <main>
@@ -100,22 +98,14 @@
 
   <nav class="tabbar" aria-label="Navegación principal">
     <span class="tab-indicador" aria-hidden="true"></span>
-    <a href="#armario" data-tab="armario">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M9.5 11v2M14.5 11v2"/></svg>
-      <span>Armario</span>
-    </a>
-    <a href="#anadir" data-tab="anadir" class="tab-add">
+    <a href="#armario" data-tab="armario"><span>Armario</span></a>
+    <a href="#outfits" data-tab="outfits"><span>Outfits</span></a>
+    <a href="#anadir" data-tab="anadir" class="tab-add" aria-label="Añadir prenda">
       <span class="plus" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
-      <span>Añadir</span>
+      <span class="sr-only">Añadir</span>
     </a>
-    <a href="#outfits" data-tab="outfits">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 6v4h3v11h10V10h3V6l-4-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3Z"/></svg>
-      <span>Outfits</span>
-    </a>
-    <a href="#inspiracion" data-tab="inspiracion">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg>
-      <span>Inspiración</span>
-    </a>
+    <a href="#inspiracion" data-tab="inspiracion"><span>Looks</span></a>
+    <button id="btn-ajustes" class="tab-btn" type="button" aria-label="Ajustes"><span>Ajustes</span></button>
   </nav>
 
   <dialog id="dlg-editar" class="sheet" aria-label="Editar prenda"></dialog>

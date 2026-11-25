@@ -113,12 +113,17 @@ async function recargarDatos() {
 }
 
 /* ---------- Navegación ---------- */
+// etiqueta: texto pequeño en mayúsculas encima del título; titulo: el título de la pantalla
 const VISTAS = {
-  armario: { titulo: 'Mi armario', render: renderArmario },
-  anadir: { titulo: 'Añadir prenda', render: () => {} },
-  outfits: { titulo: 'Outfits', render: renderOutfits },
-  inspiracion: { titulo: 'Inspiración', render: () => renderInspiracion() },
+  armario: { etiqueta: 'Mi armario', titulo: () => { const n = estado.prendas.length; return `${n} ${n === 1 ? 'prenda' : 'prendas'}`; }, render: renderArmario },
+  anadir: { etiqueta: 'Añadir', titulo: () => 'Nueva prenda', render: () => {} },
+  outfits: { etiqueta: 'Outfits', titulo: () => 'Tu outfit de hoy', render: renderOutfits },
+  inspiracion: { etiqueta: 'Looks', titulo: () => 'Inspiración', render: () => renderInspiracion() },
 };
+function ponerTitulo(vista) {
+  $('#page-eyebrow').textContent = VISTAS[vista].etiqueta;
+  $('#page-title').textContent = VISTAS[vista].titulo();
+}
 
 // Muestra una pestaña (la llama nav.js: al cambiar de pestaña y al volver atrás).
 // Si ya había otra a la vista, el cambio es una transición deslizante.
@@ -128,7 +133,7 @@ function ruta(nombre = tabActual()) {
     if (a.dataset.tab === vista) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
-  $('#page-title').textContent = VISTAS[vista].titulo;
+  ponerTitulo(vista);
   moverIndicador(ORDEN_TABS.indexOf(vista));
 
   const anterior = vistaVisible;
@@ -148,7 +153,7 @@ function ruta(nombre = tabActual()) {
 }
 
 /* ---------- Transiciones entre las pantallas principales ---------- */
-const ORDEN_TABS = ['armario', 'anadir', 'outfits', 'inspiracion'];
+const ORDEN_TABS = ['armario', 'outfits', 'anadir', 'inspiracion']; // el mismo orden que la barra inferior
 let vistaVisible = null;
 let deslizePendiente = null;   // { nuevo, progreso } al soltar el dedo a mitad de un deslizamiento
 let transicion = null;         // { fin() } de la animación en curso
@@ -332,6 +337,7 @@ function renderArmario() {
   vacio.hidden = prendas.length > 0;
   $('.filters').hidden = prendas.length === 0;
   $('#contador').hidden = prendas.length === 0;
+  if (vistaVisible === 'armario') ponerTitulo('armario');
 
   // Los tres filtros se combinan (p. ej. Camisas + azul + rayas)
   const esCalzado = (p) => categoria(p.categoria)?.slot === 'calzado';
@@ -387,9 +393,10 @@ function renderArmario() {
     h('button', { class: 'item', type: 'button', onclick: () => abrirEdicion(p), 'aria-label': `Editar ${nombrePrenda(p)} ${p.color?.nombre || ''}` },
       imgPrenda(p, { alt: '', loading: 'lazy', decoding: 'async' }),
       h('div', { class: 'meta' },
-        h('span', { class: 'dot', style: { background: fondoEstampado(p.color?.hex || '#cccccc', p.estampado, { dividido: true }) } }),
         h('span', { class: 'name' }, nombrePrenda(p)),
-        h('span', { class: 'sub' }, p.color?.nombre || '')),
+        h('span', { class: 'sub' },
+          h('span', { class: 'dot', style: { background: fondoEstampado(p.color?.hex || '#cccccc', p.estampado, { dividido: true }) } }),
+          p.color?.nombre || '')),
       (p.etiqueta?.marca || p.etiqueta?.talla)
         ? h('div', { class: 'meta2' }, [p.etiqueta.marca, p.etiqueta.talla && `Talla ${p.etiqueta.talla}`].filter(Boolean).join(' · '))
         : null
@@ -1164,22 +1171,21 @@ function pintarOutfit() {
   if (o.error) { host.replaceChildren(h('div', { class: 'notice' }, o.error)); return; }
 
   const fav = favoritoDe(o.clave);
-  const btnFav = h('button', { class: 'btn fav', type: 'button', 'aria-pressed': String(!!fav), html: ICONOS.corazon });
-  btnFav.append(fav ? 'Guardado' : 'Guardar');
+  const btnFav = h('button', { class: 'btn fav', type: 'button', 'aria-pressed': String(!!fav) }, fav ? 'Guardado' : 'Guardar');
   btnFav.addEventListener('click', () => alternarFavorito(o));
-  const btnOtro = h('button', { class: 'btn primary', type: 'button', html: ICONOS.otro, onclick: () => generar(true) });
-  btnOtro.append('Otro');
+  const btnOtro = h('button', { class: 'btn primary', type: 'button', onclick: () => generar(true) }, 'Otro outfit');
 
+  // Maniquí a todo el ancho → por qué combina → prendas sueltas → botones
   host.replaceChildren(h('div', { class: 'card outfit' },
+    crearManiqui(piezasDePrendas(o.prendas), { estilo: o.estilo, titulo: 'Outfit en el maniquí' }),
+    h('p', { class: 'outfit-why' }, o.frase),
     h('div', { class: `outfit-pieces n${o.prendas.length}` },
       ...o.prendas.map((p) => h('div', { class: 'piece' },
         imgPrenda(p, { alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
         h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: fondoEstampado(p.color.hex, p.estampado, { dividido: true }) } }), nombreCategoria(p.categoria))))),
-    crearManiqui(piezasDePrendas(o.prendas), { estilo: o.estilo, titulo: 'Outfit en el maniquí' }),
-    h('p', { class: 'outfit-why' }, o.frase),
     h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: fondoEstampado(p.color.hex, p.estampado) }, title: p.color.nombre }))),
     o.aviso ? h('p', { class: 'muted small' }, o.aviso) : null,
-    h('div', { class: 'outfit-actions' }, btnFav, btnOtro)));
+    h('div', { class: 'outfit-actions' }, btnOtro, btnFav)));
 }
 
 async function alternarFavorito(o) {
