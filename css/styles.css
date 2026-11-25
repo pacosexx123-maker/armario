@@ -362,13 +362,36 @@ select.needs-choice { border-color: var(--accent); box-shadow: 0 0 0 3px var(--a
 }
 .looks { display: grid; gap: 10px; }
 .look-card {
-  display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: center; gap: 12px;
   width: 100%; padding: 10px 14px 10px 10px; text-align: left; border: 0;
   background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
 }
 .look-card:active { transform: scale(.99); }
-.look-ilus { width: 76px; height: 95px; border-radius: 12px; background: var(--surface-2); overflow: hidden; display: grid; place-items: center; }
+.look-ilus { width: 88px; height: 110px; border-radius: 12px; background: var(--surface-2); overflow: hidden; display: grid; place-items: center; }
 .look-ilus.con-foto img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Looks con imágenes realistas: grandes arriba, calzado y complementos más pequeños abajo; todas enteras */
+.look-comp { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 3px; padding: 6%; }
+.cmp-ref .look-comp { gap: 6px; padding: 7%; }
+.lc-grandes { flex: 1 1 0; min-height: 0; display: grid; gap: inherit; grid-template-columns: 1fr; }
+.lc-grandes.n2, .lc-grandes.n3, .lc-grandes.n4 { grid-template-columns: 1fr 1fr; }
+.lc-grandes.n3, .lc-grandes.n4 { grid-template-rows: 1fr 1fr; }
+.lc-grandes.n3 > :first-child { grid-row: span 2; }
+.lc-grandes.n5 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.lc-pequenas { flex: 0 0 24%; min-height: 0; display: flex; justify-content: center; gap: inherit; }
+.lc-pequenas .lc-pieza { flex: 0 1 38%; }
+.lc-pieza {
+  position: relative; min-width: 0; min-height: 0; display: grid; place-items: center; overflow: hidden;
+  border-radius: 8px; background: color-mix(in srgb, var(--tinte, #ccc) 18%, var(--surface-2));
+  transition: background-color .3s ease;
+}
+.lc-pieza:not(.lista) { animation: lc-latido 1.4s ease-in-out infinite; }
+.lc-pieza.lista { background: transparent; }
+.lc-pieza img { width: 100%; height: 100%; object-fit: contain; display: block; opacity: 0; transition: opacity .25s ease; }
+.lc-pieza.lista img { opacity: 1; }
+.lc-pieza svg.mini-icono { width: 80%; height: 80%; max-width: 64px; max-height: 64px; }
+@keyframes lc-latido { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .lc-pieza:not(.lista) { animation: none; } }
 svg.ilustracion { width: 100%; height: 100%; padding: 6%; fill: none; stroke: none; }
 .look-info { min-width: 0; }
 .look-nombre { font-weight: 700; font-size: 15px; line-height: 1.25; }

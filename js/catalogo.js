@@ -68,6 +68,18 @@ export function realistaDePrenda(p) {
   return realistaDisponible(id) ? id : null;
 }
 
+// id de la imagen realista para un hueco de un look de Inspiración (o null).
+// Usa su campo «basico» si lo tiene; si no, lo deduce por categoría. `genero` es el del look:
+// en los unisex (y en los míos) se usa la preferencia de Ajustes, con la versión de mujer (-m) si existe.
+export function realistaDeHueco(hueco, genero) {
+  if (!realistasActivadas() || !hueco) return null;
+  const g = genero === 'mujer' || genero === 'hombre' ? genero : (leerPref('genero', '') === 'mujer' ? 'mujer' : 'hombre');
+  let id = DISPONIBLES.includes(hueco.basico) ? hueco.basico : null;
+  if (id && g === 'mujer' && !id.endsWith('-m') && DISPONIBLES.includes(id + '-m')) id += '-m';
+  if (!id) { const porCat = REALISTA_POR_CATEGORIA[hueco.categoria]; id = porCat ? porCat[g] : null; }
+  return realistaDisponible(id) ? id : null;
+}
+
 // Para las prendas con foto: el id de catálogo de su tipo (sin mirar si está activado)
 export function catalogoDeCategoria(categoria) {
   const porCat = REALISTA_POR_CATEGORIA[categoria];
