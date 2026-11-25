@@ -1,182 +1,182 @@
 {
- "abrigo-largo": {
-  "botones": 3,
-  "cremallera": false,
-  "pixeles": 112
- },
- "americana-m": {
-  "botones": 1,
-  "cremallera": false,
-  "pixeles": 148
- },
- "americana": {
-  "botones": 2,
-  "cremallera": false,
-  "pixeles": 95
- },
- "bailarinas": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "botas": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "botines": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "camisa-oxford-m": {
-  "botones": 9,
-  "cremallera": false,
-  "pixeles": 302
- },
- "camisa-oxford": {
-  "botones": 8,
-  "cremallera": false,
-  "pixeles": 1074
- },
- "camisa-vestir-m": {
-  "botones": 7,
-  "cremallera": false,
-  "pixeles": 220
- },
- "camisa-vestir": {
-  "botones": 7,
-  "cremallera": false,
-  "pixeles": 136
- },
- "camiseta-basica": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "camiseta-ml": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "cardigan": {
-  "botones": 4,
-  "cremallera": false,
-  "pixeles": 211
- },
- "chandal": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "chaqueta-vaquera": {
-  "botones": 8,
-  "cremallera": false,
-  "pixeles": 256
- },
- "chino-m": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "chino": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "falda": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "jersey-alto": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "jersey-half-zip": {
-  "botones": 1,
-  "cremallera": true,
-  "pixeles": 1764
- },
- "jersey-pico": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "jersey-redondo": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "mocasines": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "pantalon-traje-m": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "pantalon-traje": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "polo": {
-  "botones": 3,
-  "cremallera": false,
-  "pixeles": 66
- },
- "salones": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "sandalias": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "shorts": {
-  "botones": 1,
-  "cremallera": false,
-  "pixeles": 61
- },
- "sneakers": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "sudadera-capucha": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "sudadera": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "vaqueros-pitillo": {
-  "botones": 1,
-  "cremallera": false,
-  "pixeles": 30
- },
- "vaqueros-rectos": {
-  "botones": 1,
-  "cremallera": false,
-  "pixeles": 31
- },
- "vestido": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- },
- "zapatos-vestir": {
-  "botones": 0,
-  "cremallera": false,
-  "pixeles": 0
- }
+  "abrigo-largo": {
+    "botones": 3,
+    "cremallera": false,
+    "pixeles": 112
+  },
+  "americana-m": {
+    "botones": 1,
+    "cremallera": false,
+    "pixeles": 752
+  },
+  "americana": {
+    "botones": 2,
+    "cremallera": false,
+    "pixeles": 798
+  },
+  "bailarinas": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "botas": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "botines": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "camisa-oxford-m": {
+    "botones": 6,
+    "cremallera": false,
+    "pixeles": 781
+  },
+  "camisa-oxford": {
+    "botones": 8,
+    "cremallera": false,
+    "pixeles": 1074
+  },
+  "camisa-vestir-m": {
+    "botones": 7,
+    "cremallera": false,
+    "pixeles": 991
+  },
+  "camisa-vestir": {
+    "botones": 6,
+    "cremallera": false,
+    "pixeles": 736
+  },
+  "camiseta-basica": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "camiseta-ml": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "cardigan": {
+    "botones": 5,
+    "cremallera": false,
+    "pixeles": 2034
+  },
+  "chandal": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "chaqueta-vaquera": {
+    "botones": 7,
+    "cremallera": false,
+    "pixeles": 225
+  },
+  "chino-m": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "chino": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "falda": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "jersey-alto": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "jersey-half-zip": {
+    "botones": 1,
+    "cremallera": true,
+    "pixeles": 1764
+  },
+  "jersey-pico": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "jersey-redondo": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "mocasines": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "pantalon-traje-m": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "pantalon-traje": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "polo": {
+    "botones": 3,
+    "cremallera": false,
+    "pixeles": 447
+  },
+  "salones": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "sandalias": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "shorts": {
+    "botones": 1,
+    "cremallera": false,
+    "pixeles": 682
+  },
+  "sneakers": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "sudadera-capucha": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "sudadera": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "vaqueros-pitillo": {
+    "botones": 1,
+    "cremallera": false,
+    "pixeles": 205
+  },
+  "vaqueros-rectos": {
+    "botones": 1,
+    "cremallera": false,
+    "pixeles": 179
+  },
+  "vestido": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  },
+  "zapatos-vestir": {
+    "botones": 0,
+    "cremallera": false,
+    "pixeles": 0
+  }
 }
