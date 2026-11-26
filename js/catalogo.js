@@ -52,19 +52,8 @@ const REALISTA_POR_CATEGORIA = {
 
 const CALZADO = new Set(['sneakers', 'mocasines', 'zapatos-vestir', 'botas', 'botines', 'bailarinas', 'salones', 'sandalias']);
 
-// Variantes opcionales de una foto: <id>-frente.png (calzado visto de frente) y <id>-espalda.png
-// (vista de espaldas). Se tiñen igual que la foto normal.
+// Variantes de una foto (<id>-frente.png, <id>-espalda.png): se tiñen igual que la normal
 const idBase = (id) => id.replace(/-(frente|espalda)$/, '');
-const variantes = new Map();
-export function existeVariante(id, sufijo) {
-  const v = `${id}-${sufijo}`;
-  if (!variantes.has(v)) {
-    variantes.set(v, fetch(`assets/catalogo/${v}.png`, { method: 'HEAD', cache: 'no-cache' })
-      .then((r) => r.ok && (r.headers.get('content-type') || 'image/png').startsWith('image/'))
-      .catch(() => false));
-  }
-  return variantes.get(v);
-}
 
 export const realistasActivadas = () => leerPref('realistas', 'true') === 'true';
 export const realistaDisponible = (id) => !!id && REALISTAS_ACTIVOS.includes(id) && DISPONIBLES.includes(id);
@@ -219,12 +208,6 @@ function cargarFuente(id) {
   return fuentes.get(id);
 }
 
-// Caja de la prenda dentro de su foto, en fracciones (0–1) del ancho y del alto de la imagen
-export async function cajaRealista(id) {
-  const f = await cargarFuente(id);
-  return { x0: f.caja.x0 / f.w, y0: f.caja.y0 / f.h, x1: (f.caja.x1 + 1) / f.w, y1: (f.caja.y1 + 1) / f.h, aspecto: f.w / f.h };
-}
-
 /* ---------- Sombreado: tabla gris de la foto → color ---------- */
 
 // Para cada gris (0–255) de la foto, el color final. La desviación respecto al gris medio de la
@@ -232,7 +215,7 @@ export async function cajaRealista(id) {
 //  - colores claros: sombras amplias, brillos moderados;
 //  - colores oscuros: sombras comprimidas (si no, se empastan en negro) y brillos realzados
 //    (si no, la prenda queda plana); así el azul marino o el negro siguen mostrando pliegues.
-function tablaSombreado(hex, stats) {
+export function tablaSombreado(hex, stats) {
   const [Lb, ab, bb] = hexToLab(hex);
   const Lref = LAB_GRIS[stats.ref];
   const abajo = Math.max(2, Lref - LAB_GRIS[stats.bajo]);
@@ -255,7 +238,7 @@ function tablaSombreado(hex, stats) {
 
 /* ---------- Estampado: capa de cobertura (0–255) ---------- */
 
-function capaEstampado(f, est) {
+export function capaEstampado(f, est) {
   if (est.tipo === 'liso') return null;
   const c = document.createElement('canvas'); c.width = f.w; c.height = f.h;
   const ctx = c.getContext('2d', { willReadFrequently: true });

@@ -8,7 +8,7 @@ import { ESTILOS_OUTFIT, generarOutfit, claveOutfit } from './outfits.js';
 import { exportar, importar } from './backup.js';
 import { $, h, ICONOS, toast, chip, leerPref, guardarPref, mostrarColorGrande, mostrarFotoGrande } from './ui.js';
 import { svgPrenda, svgADataURL } from './illustration.js';
-import { crearManiqui, piezasDePrendas } from './maniqui-vista.js';
+import { crearManiqui, piezasDePrendas } from './maniqui.js';
 import { gruposBasicos } from './basics.js';
 import { realistaDePrenda, realistaDeBasico, realistaEnCache, renderRealista, cargarIndice, tieneCierre, tieneCremallera,
   botonesPorDefecto, catalogoDeCategoria, detectarBotonesEnFoto } from './catalogo.js';
@@ -1175,14 +1175,18 @@ function pintarOutfit() {
   btnFav.addEventListener('click', () => alternarFavorito(o));
   const btnOtro = h('button', { class: 'btn primary', type: 'button', onclick: () => generar(true) }, 'Otro outfit');
 
-  // Maniquí a todo el ancho → por qué combina → prendas sueltas → botones
+  // Miniatura de una prenda (imagen + nombre); el maniquí la usa en su fila para quitar y poner capas
+  const miniatura = (p) => [
+    imgPrenda(p, { alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
+    h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: fondoEstampado(p.color.hex, p.estampado, { dividido: true }) } }), nombreCategoria(p.categoria))];
+  const maniqui = crearManiqui(piezasDePrendas(o.prendas, miniatura), { titulo: 'Outfit en el maniquí' });
+
+  // Maniquí a todo el ancho con sus prendas debajo → por qué combina → botones
+  // (sin maniquí, las prendas sueltas van en su fila de siempre)
   host.replaceChildren(h('div', { class: 'card outfit' },
-    crearManiqui(piezasDePrendas(o.prendas), { estilo: o.estilo, titulo: 'Outfit en el maniquí' }),
+    maniqui,
     h('p', { class: 'outfit-why' }, o.frase),
-    h('div', { class: `outfit-pieces n${o.prendas.length}` },
-      ...o.prendas.map((p) => h('div', { class: 'piece' },
-        imgPrenda(p, { alt: `${nombreCategoria(p.categoria)} ${p.color.nombre}` }),
-        h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: fondoEstampado(p.color.hex, p.estampado, { dividido: true }) } }), nombreCategoria(p.categoria))))),
+    maniqui ? null : h('div', { class: `outfit-pieces n${o.prendas.length}` }, ...o.prendas.map((p) => h('div', { class: 'piece' }, miniatura(p)))),
     h('div', { class: 'palette', 'aria-hidden': 'true' }, ...o.prendas.map((p) => h('span', { style: { background: fondoEstampado(p.color.hex, p.estampado) }, title: p.color.nombre }))),
     o.aviso ? h('p', { class: 'muted small' }, o.aviso) : null,
     h('div', { class: 'outfit-actions' }, btnOtro, btnFav)));

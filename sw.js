@@ -1,7 +1,7 @@
 // Service worker de Armario: cachea la app para que funcione sin conexión.
 // Cambia VERSION cada vez que publiques cambios (además, los archivos de la
 // app se piden siempre primero a la red, así que los cambios llegan solos).
-const VERSION = 'armario-v25';
+const VERSION = 'armario-v26';
 const APP_CACHE = `${VERSION}-app`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const ESPERA_RED_MS = 4000; // con conexión lenta, usar la caché pasado este tiempo
@@ -27,8 +27,35 @@ const APP_SHELL = [
   './js/nav.js',
   './js/catalogo.js',
   './js/maniqui.js',
-  './js/maniqui-vista.js',
   './assets/catalogo/mascaras/indice.json',
+  // Maniquí por capas
+  './assets/maniqui/abrigo-largo.png',
+  './assets/maniqui/americana.png',
+  './assets/maniqui/base.png',
+  './assets/maniqui/botas.png',
+  './assets/maniqui/camisa-oxford.png',
+  './assets/maniqui/camisa-vestir.png',
+  './assets/maniqui/camiseta-basica.png',
+  './assets/maniqui/camiseta-ml.png',
+  './assets/maniqui/capas.json',
+  './assets/maniqui/cardigan.png',
+  './assets/maniqui/chandal.png',
+  './assets/maniqui/chaqueta-vaquera.png',
+  './assets/maniqui/chino.png',
+  './assets/maniqui/jersey-alto.png',
+  './assets/maniqui/jersey-half-zip.png',
+  './assets/maniqui/jersey-pico.png',
+  './assets/maniqui/jersey-redondo.png',
+  './assets/maniqui/mocasines.png',
+  './assets/maniqui/pantalon-traje.png',
+  './assets/maniqui/polo.png',
+  './assets/maniqui/shorts.png',
+  './assets/maniqui/sneakers.png',
+  './assets/maniqui/sudadera-capucha.png',
+  './assets/maniqui/sudadera.png',
+  './assets/maniqui/vaqueros-pitillo.png',
+  './assets/maniqui/vaqueros-rectos.png',
+  './assets/maniqui/zapatos-vestir.png',
   './assets/catalogo/abrigo-largo.png',
   './assets/catalogo/americana-m.png',
   './assets/catalogo/americana.png',

@@ -6,7 +6,7 @@ import { adaptarLook, describirHueco } from './matching.js';
 import { ilustrarLook, iconoPrenda } from './illustration.js';
 import { nombreCategoria, categoria as infoCategoria } from './categories.js';
 import { realistaDeHueco, realistaEnCache, renderRealista } from './catalogo.js';
-import { crearManiqui, piezasDePrendas } from './maniqui-vista.js';
+import { crearManiqui, piezasDePrendas } from './maniqui.js';
 import { ESTILOS_OUTFIT } from './outfits.js';
 import { abrirDialogo } from './nav.js';
 
@@ -180,10 +180,12 @@ function tarjeta(look, res) {
 
 let lookAbierto = null;
 let elecciones = {};
+let vistaManiqui = 'mia'; // en el detalle: el maniquí con la «referencia» o con «tu versión»
 
 function abrirLook(look) {
   lookAbierto = look;
   elecciones = {};
+  vistaManiqui = 'mia';
   pintarDetalle();
   const dlg = $('#dlg-look');
   if (!dlg.open) abrirDialogo(dlg); // «atrás» lo cierra
@@ -247,7 +249,7 @@ function pintarDetalle() {
       h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', html: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>', onclick: () => dlg.close() })),
     h('p', { class: 'look-meta' }, meta(look), look.mio ? h('span', { class: 'badge' }, 'Mío') : null),
     h('div', { class: 'cmp' }, referencia, miVersion),
-    elegidas.length ? crearManiqui(piezasDePrendas(elegidas.map((r) => r.prenda)), { estilo: look.estilo, titulo: 'Tu versión en el maniquí' }) : null,
+    seccionManiqui(look, elegidas),
     h('div', { class: 'cmp-pct' }, h('strong', {}, `${res.parecido}%`), ' de parecido con tu armario'),
     h('h3', { class: 'sub-title' }, 'Prenda a prenda'),
     h('div', { class: 'slots' }, ...filas),
@@ -257,6 +259,38 @@ function pintarDetalle() {
       h('p', { class: 'muted small' }, 'Úsalo como lista de la compra.')) : null,
     acciones,
   ].filter(Boolean));
+}
+
+// Maniquí del detalle con selector «Referencia» / «Tu versión» (por defecto, tu versión)
+function seccionManiqui(look, elegidas) {
+  const miniHueco = (hu, id) => {
+    const caja = h('div', { class: 'mini-hueco' }, id ? pieza({ hu, id }) : h('div', { class: 'lc-pieza lista', html: iconoPrenda(hu.categoria, hu.color) }));
+    cargarComposicion(caja);
+    return [caja, h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: hu.color } }), describirHueco(hu))];
+  };
+  const referencia = look.huecos.map((hu) => {
+    const id = realistaDeHueco(hu, look.genero);
+    return { id, opciones: { base: hu.color, estampado: hu.estampado || null, botones: hu.botones || null }, miniatura: () => miniHueco(hu, id) };
+  });
+  const mia = piezasDePrendas(elegidas.map((r) => r.prenda), (p) => [
+    ctx.imgPrenda(p, { alt: nombreCategoria(p.categoria) }),
+    h('span', { class: 'tag' }, h('span', { class: 'dot', style: { background: p.color?.hex || '#ccc' } }), nombreCategoria(p.categoria))]);
+
+  if (![...referencia, ...mia].some((it) => it.id)) return null; // imágenes realistas desactivadas
+  const caja = h('div', { class: 'mq-look' });
+  const pintar = () => {
+    const opcion = (v, texto) => h('button', { type: 'button', role: 'radio', 'aria-checked': String(vistaManiqui === v),
+      onclick: () => { if (vistaManiqui !== v) { vistaManiqui = v; pintar(); } } }, texto);
+    const selector = h('div', { class: 'segmented mq-selector', role: 'radiogroup', 'aria-label': 'Qué ver en el maniquí' },
+      opcion('ref', 'Referencia'), opcion('mia', 'Tu versión'));
+    const items = vistaManiqui === 'ref' ? referencia : mia;
+    const maniqui = crearManiqui(items, { titulo: vistaManiqui === 'ref' ? `${look.nombre} en el maniquí` : 'Tu versión en el maniquí' });
+    caja.replaceChildren(selector, maniqui || h('p', { class: 'muted small mq-sin' }, vistaManiqui === 'mia' && !items.length
+      ? 'Aún no tienes prendas parecidas para vestir el maniquí.'
+      : 'Estas prendas todavía no tienen imagen para el maniquí.'));
+  };
+  pintar();
+  return caja;
 }
 
 // Prenda del look en «Prenda a prenda»: su imagen realista teñida (o su dibujo si están desactivadas)

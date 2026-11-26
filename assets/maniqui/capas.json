@@ -1,0 +1,46 @@
+{
+ "ancho": 848,
+ "alto": 1264,
+ "recorte_vista": [
+  180,
+  40,
+  668,
+  1240
+ ],
+ "base": "base.png",
+ "capas": {
+  "jersey-alto": "intermedia",
+  "sneakers": "calzado",
+  "abrigo-largo": "exterior",
+  "camiseta-basica": "interior",
+  "shorts": "abajo",
+  "vaqueros-rectos": "abajo",
+  "chandal": "abajo",
+  "jersey-redondo": "intermedia",
+  "camiseta-ml": "interior",
+  "mocasines": "calzado",
+  "polo": "interior",
+  "americana": "exterior",
+  "camisa-vestir": "interior",
+  "sudadera": "intermedia",
+  "pantalon-traje": "abajo",
+  "botas": "calzado",
+  "vaqueros-pitillo": "abajo",
+  "camisa-oxford": "interior",
+  "sudadera-capucha": "intermedia",
+  "jersey-half-zip": "intermedia",
+  "zapatos-vestir": "calzado",
+  "chino": "abajo",
+  "jersey-pico": "intermedia",
+  "cardigan": "intermedia",
+  "chaqueta-vaquera": "exterior"
+ },
+ "orden_de_dibujo": [
+  "base",
+  "calzado",
+  "abajo",
+  "interior",
+  "intermedia",
+  "exterior"
+ ]
+}
